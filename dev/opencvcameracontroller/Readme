@@ -1,0 +1,3 @@
+g++ -c C920Camera.cpp 
+g++ -c Main.cpp Main.h C920Camera.h
+g++ `pkg-config opencv --cflags` Main.cpp -o Main C920Camera.o `pkg-config opencv --libs`

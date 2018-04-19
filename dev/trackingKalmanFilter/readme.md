@@ -1,0 +1,2 @@
+g++ -c trackingKalmanFilterImplementation.cpp trackingKalmanFilter.h
+g++ `pkg-config opencv --cflags` trackingKalmanFilterApplication.cpp -o trackingKalmanFilterApplication trackingKalmanFilterImplementation.o `pkg-config opencv --libs`

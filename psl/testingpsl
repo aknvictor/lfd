@@ -1,0 +1,52 @@
+t=1
+sub:
+a
+scores (hyps => sub):
+a->b 
+
+t=2
+sub:
+ab 
+scores (hyps => sub): hs[0]: 0.000000
+b->c
+
+t=3
+sub:
+abc
+scores (hyps => sub): hs[0]: 0.000000 hs[1]: 0.000000
+c->c
+
+t=3
+sub:
+abcc
+scores (hyps => sub): hs[0]: 0.000000 hs[1]: 0.000000 hs[2]: 1.000000
+punish(3)
+c->a
+
+t=4
+sub:
+abcca
+scores (hyps => sub): hs[0]: 1.000000 hs[1]: 0.000000 hs[2]: 0.000000 hs[3]: 0.000000
+reward(1)
+
+t=5
+sub:
+abccab 
+scores (hyps => sub): hs[0]: 0.000000 hs[1]: 1.000000 hs[2]: 0.000000 hs[3]: 0.000000
+reward(2)
+
+t=6
+sub:
+abccabc
+scores (hyps => sub): hs[0]: 0.000000 hs[1]: 0.000000 hs[2]: 0.500000 hs[3]: 1.000000
+reward(3)
+punish(4)
+bc->c
+
+t=7
+sub:
+abccabcc
+scores (hyps => sub): hs[0]: 0.000000 hs[1]: 0.000000 hs[2]: 0.666667 hs[3]: 0.500000 hs[4]: 0.000000
+reward(4)
+punish(3)
+cc->a
