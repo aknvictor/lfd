@@ -1,0 +1,4 @@
+The USB port ID differs for Windows and Linux
+
+USB Port ID on windows is in the format "\\\\.\\COM9" and on linux "/dev/ttyUSB0
+

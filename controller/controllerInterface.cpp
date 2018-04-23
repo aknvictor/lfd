@@ -19,6 +19,8 @@ int getPW(int idx);
 #define MIN_PW 750  //lowest pulse width
 #define MAX_PW 2250 //highest pulsewidth
 
+//working environment 
+
 #define MAX_X 100
 #define MAX_Y 200
 #define MAX_Z 270
@@ -34,7 +36,7 @@ char BAUD[6];
 int ACTIVE_SERVOS_COUNT = 5;
 int SPEED;
 int MESASGE_LENGTH = 500;
-int offset = 5;
+int offset = 5; //pin starting point. Ideally the first servo would be connected to pin 0
 
 int defaultPulseWidths[32] = {1800, 2200, 2000, 2000, 2000, 1500, 2000, 1500, 750, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500};
 int currentPulseWidths[32] = {1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500};
@@ -88,32 +90,20 @@ void goHome(int numberOfServos)
 
     ACTIVE_SERVOS_COUNT = numberOfServos;
 
-    char commandbuilder[COMMAND_SIZE] = "";
-    char command[COMMAND_SIZE];
-
-    for (int i = 0; i < ACTIVE_SERVOS_COUNT - 1; i++)
+    int * channels = new int[ACTIVE_SERVOS_COUNT];
+    int * pos = new int[ACTIVE_SERVOS_COUNT];
+    
+    for (int i = 0; i < ACTIVE_SERVOS_COUNT; i++)
     {
-        char temp[COMMAND_SIZE];
-
-        //#channel Ppulsewidth Sspeed <carriage_return>
-
-        sprintf(temp, "#%dP%d", i + offset, defaultPulseWidths[i + offset]);
-
-        strcat(commandbuilder, temp);
-        strcat(commandbuilder, " ");
-
-        currentPulseWidths[i] = defaultPulseWidths[i];
+        channels[i] = i + offset;
+        pos[i] = defaultPulseWidths[i+ offset];
     }
-    char temp[COMMAND_SIZE];
 
-    sprintf(temp, "S%d <CR>", SPEED);
+    executeCommand(channels, pos, SPEED, ACTIVE_SERVOS_COUNT);
 
-    strcat(commandbuilder, temp);
+    delete [] channels;
+    delete [] pos;
 
-    sprintf(command, "echo \"%s\" > %s", commandbuilder, PORT);
-    // printf(commandbuilder);
-    system(command);
-    sleep(DEFAULT_SLEEP_TIME);
 }
 
 /** 
@@ -134,13 +124,11 @@ void goHome2(int numberOfServos)
 
     ACTIVE_SERVOS_COUNT = numberOfServos;
 
-    printf("going home.. \n");
-    for (int i = 0; i < ACTIVE_SERVOS_COUNT - 1; i++)
+    for (int i = 0; i < ACTIVE_SERVOS_COUNT ; i++)
     {
         goServoHome(i);
     }
 
-    printf("done.. \n");
 }
 
 /** 
@@ -180,7 +168,6 @@ void goServoHome(int index)
  * @param index, index of the servo
  * @param pw, pulse width
  */
-
 void setServoPW(int index, int pw)
 {
     if (index >= ACTIVE_SERVOS_COUNT)
@@ -219,6 +206,32 @@ void setServoPW(int index, int pw)
     currentPulseWidths[index] = pw;
 }
 
+void executeCommand(int * channel, int * pos, int speed, int size)
+{
+    char commandbuilder[COMMAND_SIZE] = {0};
+    
+    for(int i =0; i< size; i++)
+    {
+
+        char temp[COMMAND_SIZE] = {0};
+        sprintf(temp, "#%dP%d", channel[i], pos[i]);
+
+        strcat(commandbuilder, temp);
+        strcat(commandbuilder, " ");
+
+        currentPulseWidths[i] = pos[i];
+
+    }
+
+    char temp[COMMAND_SIZE];
+
+    sprintf(temp, "S%d <CR>", speed);
+    strcat(commandbuilder, temp);
+
+    execute(commandbuilder);
+
+}
+
 void executeCommand(int channel, int pos, int speed)
 {
 
@@ -230,6 +243,7 @@ void executeCommand(int channel, int pos, int speed)
     //setServoPW(channel, pos);
 
     sprintf(command, "#%dP%dS%d <CR>", channel, pos, speed);
+
     execute(command);
 }
 
@@ -252,12 +266,16 @@ void execute(char *command)
     }
     else
     {
-        char execcommand[sizeof(command) + 20];
+        char execcommand[COMMAND_SIZE];
 
         sprintf(execcommand, "echo \"%s\" > %s", command, PORT);
 
+        // printf("%s", execcommand);
+        
         system(execcommand);
     }
+
+    sleep(DEFAULT_SLEEP_TIME);
 
 }
 
@@ -308,7 +326,7 @@ int getPW(int idx)
     return currentPulseWidths[idx];
 }
 
-// method to recieve catesian coordinates and translate to joint positions (pulse widths)
+// method to recieve cartesian coordinates and translate to joint positions (pulse widths)
 
 //inverse kinematics routine
 
@@ -319,7 +337,7 @@ int getPW(int idx)
 #define A3 146.0    // Shoulder-to-elbow "bone"
 #define A4 187.0    // Elbow-to-wrist "bone"
 #define EZ 100      // Gripper length
-#define DEG_PW 0.09 //degrees to pulse width conversation factor
+#define DEG_PW 0.09 //degrees to pulse width conversion factor
 
 int zeroOffset[7];
 
@@ -522,7 +540,7 @@ void grasp(int d)
 
 int pose_within_working_env(float x, float y, float z)
 {
-    if((int)x < MAX_X && (int) x > MIN_X && (int)y < MAX_Y && (int) y > MIN_Y && (int)z < MAX_Z && (int) z > MIN_Z ) return 1;
+    if((int)x <= MAX_X && (int) x > MIN_X && (int)y <= MAX_Y && (int) y > MIN_Y && (int)z <= MAX_Z && (int) z > MIN_Z ) return 1;
     else return 0;
 }
 
