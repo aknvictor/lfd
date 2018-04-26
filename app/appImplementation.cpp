@@ -7,14 +7,12 @@ void prompt_and_exit(int status)
     exit(status);
 }
 
-float *getObjectPose(InputArray frame)
+float *getObjectPose(InputArray frame, int * segmentation_values)
 {
     int min_hue;
     int max_hue;
     int min_sat;
     int max_sat;
-
-    FILE *fp_in;
 
     float* pose = new float[6];
     pose[0] = -1.0;
@@ -23,16 +21,11 @@ float *getObjectPose(InputArray frame)
     pose[3] = -1.0;
     pose[4] = -1.0;
     pose[5] = -1.0;
-    
-    
 
-    if ((fp_in = fopen("data/ObjectTrackingInput.txt", "r")) == 0)
-    {
-        printf("Error can't open input file ObjectTrackingInput.txt\n");
-        prompt_and_exit(1);
-    }
-
-    fscanf(fp_in, "%d %d %d %d", &min_hue, &max_hue, &min_sat, &max_sat);
+    min_hue = segmentation_values[0];
+    max_hue = segmentation_values[1];
+    min_sat = segmentation_values[2];
+    max_sat = segmentation_values[3];
 
     cv::Mat res;
     frame.copyTo(res);
@@ -186,7 +179,103 @@ float *scale_and_map(int m_x, int m_y, int m_z, int m_rx, int m_ry, int m_rz)
 void sig(int s)
 {
     #if DEMO
+    printf("%s", "exiting");
     spnav_close();
     #endif
     exit(0);
+}
+
+
+void hyptrain()
+{
+    Event_t *events = new Event_t();
+
+    EventUnion e;
+
+    ifstream inFile;
+    inFile.open("data/trainingdata.txt");
+
+    float _da, _dx, _dy, _dz, _g, _dfx, _dfy, _dfz, _dfa;
+
+    string line;
+
+    bool actionread = false;
+
+    while (getline(inFile, line))
+    {
+        // cout << "\n";
+        if (line != "end" && line != "finish")
+        {
+
+            char *dup = strdup(line.c_str());
+            char *tokens = strtok(dup, " ");
+
+            if (!actionread)
+            {            
+                //read action
+
+                _dx = atof(dup);
+                tokens = strtok(NULL, " ");
+
+                _dy = atof(tokens);
+                tokens = strtok(NULL, " ");
+
+                _dz = atof(tokens);
+                tokens = strtok(NULL, " ");
+
+                _da = atof(tokens);
+                tokens = strtok(NULL, " ");
+
+                _g = atof(tokens);
+
+                actionread = true;
+
+                // printf("%f %f %f %f %f ", _dx, _dy, _dz, _da, _g);
+                
+                e.action.deltaangle = _da + 0.5;
+                e.action.deltaX = _dx + 0.5;
+                e.action.deltaY = _dy + 0.5;
+                e.action.deltaZ = _dz + 0.5;
+                e.action.grasp = _g;
+
+                push(events, e, 1);
+
+            }
+            else
+            {
+
+                //read obseration
+
+                actionread = false;
+
+                _dfx = atof(dup);
+                tokens = strtok(NULL, " ");
+
+                _dfy = atof(tokens);
+                tokens = strtok(NULL, " ");
+
+                _dfz = atof(tokens);
+                tokens = strtok(NULL, " ");
+
+                _dfa = atof(tokens);
+                tokens = strtok(NULL, " ");
+
+                // printf("%f %f %f %f ", _dfx, _dfy, _dfz, _dfa);
+                
+                e.observation.diffZ = _dfz + 0.5;
+                e.observation.diffY = _dfy + 0.5;
+                e.observation.diffX = _dfx + 0.5;
+                e.observation.diffangle = _dfa + 0.5;
+
+                push(events, e, 2);
+
+            }
+
+            free(dup);
+        }
+    }
+
+    train(events, 0, getEventSeqLen(events) - 1);
+    delete events;
+
 }

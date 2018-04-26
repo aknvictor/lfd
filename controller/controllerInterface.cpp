@@ -23,10 +23,10 @@ int getPW(int idx);
 
 #define MAX_X 100
 #define MAX_Y 200
-#define MAX_Z 270
+#define MAX_Z 150
 #define MIN_X -90
 #define MIN_Y 130
-#define MIN_Z 85
+#define MIN_Z 75
 
 // #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 // #define MIN(x, y) (((x) < (y)) ? (x) : (y))
@@ -36,9 +36,9 @@ char BAUD[6];
 int ACTIVE_SERVOS_COUNT = 5;
 int SPEED;
 int MESASGE_LENGTH = 500;
-int offset = 5; //pin starting point. Ideally the first servo would be connected to pin 0
+int offset = 16; //pin starting point. Ideally the first servo would be connected to pin 0
 
-int defaultPulseWidths[32] = {1800, 2200, 2000, 2000, 2000, 1500, 2000, 1500, 750, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500};
+int defaultPulseWidths[32] = {1800, 2200, 2000, 2000, 2000, 1500, 2000, 1500, 750, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 2000, 1500, 750, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500};
 int currentPulseWidths[32] = {1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500};
 
 /** 
@@ -80,6 +80,8 @@ void initializeController(char *port, char *baudrate)
  */
 void goHome(int numberOfServos)
 {
+    printf("%s\n", "going home");
+
     if (numberOfServos > MAX_SERVOS)
     {
         char * message = new char[MESASGE_LENGTH];
@@ -154,7 +156,7 @@ void goServoHome(int index)
 
     //printf("\n #%dP%dS%d <CR> \n",  index, defaultPulseWidths[index], SPEED);
 
-    sprintf(commandbuilder, "#%dP%dS%d", index, defaultPulseWidths[index], SPEED);
+    sprintf(commandbuilder, " #%dP%dS%d", index, defaultPulseWidths[index], SPEED);
     sprintf(command, "echo \"%s\" > %s", commandbuilder, PORT);
 
     system(command);
@@ -196,14 +198,15 @@ void setServoPW(int index, int pw)
 
     //#channel Ppulsewidth Sspeed <carriage_return>
 
-    sprintf(commandbuilder, "#%dP%dS%d <CR>", index, pw, SPEED);
+    sprintf(commandbuilder, " #%dP%dS%d <CR>", index, pw, SPEED);
     sprintf(command, "echo \"%s\" > %s", commandbuilder, PORT);
+
+    currentPulseWidths[index] = pw;
 
     system(command);
     sleep(DEFAULT_SLEEP_TIME);
     //sleep(getTimeNeeded(index, pw, SPEED));
 
-    currentPulseWidths[index] = pw;
 }
 
 void executeCommand(int * channel, int * pos, int speed, int size)
@@ -214,7 +217,7 @@ void executeCommand(int * channel, int * pos, int speed, int size)
     {
 
         char temp[COMMAND_SIZE] = {0};
-        sprintf(temp, "#%dP%d", channel[i], pos[i]);
+        sprintf(temp, " #%dP%dS%d", channel[i], pos[i], speed);
 
         strcat(commandbuilder, temp);
         strcat(commandbuilder, " ");
@@ -222,11 +225,6 @@ void executeCommand(int * channel, int * pos, int speed, int size)
         currentPulseWidths[i] = pos[i];
 
     }
-
-    char temp[COMMAND_SIZE];
-
-    sprintf(temp, "S%d <CR>", speed);
-    strcat(commandbuilder, temp);
 
     execute(commandbuilder);
 
@@ -242,7 +240,7 @@ void executeCommand(int channel, int pos, int speed)
 
     //setServoPW(channel, pos);
 
-    sprintf(command, "#%dP%dS%d <CR>", channel, pos, speed);
+    sprintf(command, " #%dP%dS%d <CR>", channel, pos, speed);
 
     execute(command);
 }
@@ -255,7 +253,7 @@ void executeCommand(int channel, int pos, int speed)
 void execute(char *command)
 {
 
-    if (sizeof(command) < 6)
+    if (strlen(command) < 6)
     {
         char *message = new char[MESASGE_LENGTH];
         sprintf(message, "Invalid command. Should be of size %d at least", 6);
@@ -270,12 +268,12 @@ void execute(char *command)
 
         sprintf(execcommand, "echo \"%s\" > %s", command, PORT);
 
-        // printf("%s", execcommand);
+        printf("%s\n", execcommand);
         
         system(execcommand);
     }
 
-    sleep(DEFAULT_SLEEP_TIME);
+    // sleep(DEFAULT_SLEEP_TIME);f
 
 }
 
@@ -353,10 +351,8 @@ float radians(float degrees)
     return radians;
 }
 
-int *getJointPositions(float x, float y, float z, float pitch_angle_d, float roll_angle_d)
+bool getJointPositions(float x, float y, float z, float pitch_angle_d, float roll_angle_d, int positions [])
 {
-
-    int *positions = (int*) malloc(sizeof(int) * 6);
 
     float hum_sq;
     float uln_sq;
@@ -422,7 +418,7 @@ int *getJointPositions(float x, float y, float z, float pitch_angle_d, float rol
     // printf("\n Entering IK \n");
 
     if (std::isnan(shl_angle_r) || std::isinf(shl_angle_r))
-        return positions;
+        return false;
     float shl_angle_d = degrees(shl_angle_r);
 
     //float a1_d = degrees(a1);
@@ -433,7 +429,7 @@ int *getJointPositions(float x, float y, float z, float pitch_angle_d, float rol
     float elb_angle_r = acos((hum_sq + uln_sq - s_w) / (2 * A3 * A4));
     // If result is NAN or Infinity, the desired arm position is not possible
     if (std::isnan(elb_angle_r) || std::isinf(elb_angle_r))
-        return positions;
+        return false;
 
     float elb_angle_d = degrees(elb_angle_r);
     float elb_angle_dn = -(180.0 - elb_angle_d);
@@ -516,7 +512,7 @@ int *getJointPositions(float x, float y, float z, float pitch_angle_d, float rol
 
     // printf("\n Exiting IK \n");
 
-    return positions;
+    return true;
 }
 
 // 0 (open) - 60(close)
@@ -540,7 +536,9 @@ void grasp(int d)
 
 int pose_within_working_env(float x, float y, float z)
 {
-    if((int)x <= MAX_X && (int) x > MIN_X && (int)y <= MAX_Y && (int) y > MIN_Y && (int)z <= MAX_Z && (int) z > MIN_Z ) return 1;
+    int w = (int)x <= MAX_X && (int) x > MIN_X && (int)y <= MAX_Y && (int) y > MIN_Y && (int)z <= MAX_Z && (int) z > MIN_Z; 
+
+    if(w)  return 1;
     else return 0;
 }
 
@@ -549,23 +547,44 @@ int gotoPose(float x, float y, float z, float pitch, float roll)
     if(!pose_within_working_env(x, y, z)) return 0;
     // printf("Cartesian pose: \n  %f %f %f %f %f \n", x, y, z, pitch, roll);
 
-    int *poss = getJointPositions(x, y, z, pitch, roll);
+    int * poss = new int [6];
 
-    if (poss[0] != 0)
+    bool status = getJointPositions(x, y, z, pitch, roll, poss );
+
+    if (status)
     {
+        int * channels = new int [5];
+        int * pos = new int [5];
+
+        channels[0] = 0 + offset;
+        channels[1] = 1 + offset;
+        channels[2] = 2 + offset;
+        channels[3] = 3 + offset;
+        channels[4] = 4 + offset;
+
+        pos[0] = MIN(MAX_PW, MAX(MIN_PW, poss[0]));
+        pos[1] = MIN(MAX_PW, MAX(MIN_PW, poss[1]));
+        pos[2] = MIN(MAX_PW, MAX(MIN_PW, poss[2]));
+        pos[3] = poss[3];
+        pos[4] = poss[4];
         
-        executeCommand(0, MIN(MAX_PW, MAX(MIN_PW, poss[0])), SPEED);
-        executeCommand(1, MIN(MAX_PW, MAX(MIN_PW, poss[1])), SPEED);
-        executeCommand(2, MIN(MAX_PW, MAX(MIN_PW, poss[2])), SPEED);
-        executeCommand(3, poss[3], SPEED);
-        executeCommand(4, poss[4], SPEED);
+
+        // executeCommand(0, MIN(MAX_PW, MAX(MIN_PW, poss[0])), SPEED);
+        // executeCommand(1, MIN(MAX_PW, MAX(MIN_PW, poss[1])), SPEED);
+        // executeCommand(2, MIN(MAX_PW, MAX(MIN_PW, poss[2])), SPEED);
+        // executeCommand(3,poss[3], SPEED);
+        // executeCommand(4, poss[4], SPEED);
+
+        executeCommand(channels, pos, SPEED, 5);
 
         // printf("Joint pos: \n %d %d %d %d %d \n", poss[0], poss[1],  poss[2], poss[3], poss[4]);
-        return 1;
     }
     else
     {
         printf("Joint pos: Unatainable \n");
-        return 0;
     }
+
+    delete [] poss;
+    return status;
+
 }

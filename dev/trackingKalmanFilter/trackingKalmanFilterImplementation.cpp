@@ -79,7 +79,7 @@ int trackingKalmanFilter(int min_hue, int max_hue, int min_sat, int max_sat) {
     // <<<< Kalman Filter
 
     // Camera Index
-    int idx = 0;
+    int idx = 1;
 
     // Camera Capture
     cv::VideoCapture cap;

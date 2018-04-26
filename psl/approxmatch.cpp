@@ -73,7 +73,6 @@ int dynamicprogramming(string  pattern, string  text, int k)
         }
 
         printf("\n");
-
     }
 
     for(int i = 0; i <= psz; i++)

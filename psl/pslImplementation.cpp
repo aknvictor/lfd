@@ -176,9 +176,9 @@ Hypothesis grow(Event_t *sequence, Hypothesis parent)
 
     hypotheses[hypothesisCount].rhs = parent.rhs;
 
-    print_list(hypotheses[hypothesisCount].lhs);
-    printf("->");
-    print_list(hypotheses[hypothesisCount].rhs);
+    // print_list(hypotheses[hypothesisCount].lhs);
+    // printf("->");
+    // print_list(hypotheses[hypothesisCount].rhs);
 
     hypotheses[hypothesisCount].id = hypothesisCount;
 
@@ -197,9 +197,9 @@ Hypothesis grow_sub(Event_t *sequence, Event_t *parent)
     h.lhs = subsequence(sequence, slen - 1, slen); //add the last event sequence
     h.rhs = parent;
 
-    print_list(h.lhs);
-    printf("->");
-    print_list(h.rhs);
+    // print_list(h.lhs);
+    // printf("->");
+    // print_list(h.rhs);
 
     hypotheses[hypothesisCount] = h;
     hypotheses[hypothesisCount].id = hypothesisCount;
@@ -462,21 +462,21 @@ void train(Event_t *sequence, int startIndex, int stopIndex)
         Event_t * sub = subsequence(sequence, 0, i);
         Event_t * t = subsequence(sequence, i, i+1);
 
-        printf("%s", "sub: \n");
+        // printf("%s", "sub: \n");
 
-        print_list(sub);
+        // print_list(sub);
 
         double * hs = new double[hypothesisCount];
 
-        printf("%s", "scores (hyps => sub): ");
+        // printf("%s", "scores (hyps => sub): ");
 
         getConfScores(sub, hs); //gets a confidence score for every hypothesis
 
         for (int j = 0; j < hypothesisCount; j++)
         {
-            printf("hs[%d]: %f ", j, hs[j]);
+            // printf("hs[%d]: %f ", j, hs[j]);
         }
-        printf("\n");
+        // printf("\n");
 
         Hypothesis maxh = newHyp();
         
@@ -503,7 +503,7 @@ void train(Event_t *sequence, int startIndex, int stopIndex)
                 if (eventcompare(hyp.rhs, t) == 0)
                 {
                     reward(j, 1);
-                    printf("reward(%d)\n" ,j+1);
+                    // printf("reward(%d)\n" ,j+1);
 
                     if (bestCorrect.id == -1 || getEventSeqLen(bestCorrect.lhs) < getEventSeqLen(hyp.lhs))
                     {
@@ -520,7 +520,7 @@ void train(Event_t *sequence, int startIndex, int stopIndex)
         if(maxh.id != -1 && !correct)
         {
             punish(maxh.id, 1);
-            printf("punish(%d)\n", maxh.id+1);
+            // printf("punish(%d)\n", maxh.id+1);
         }
 
         //psl learns only on failure
@@ -536,6 +536,9 @@ void train(Event_t *sequence, int startIndex, int stopIndex)
 
         free_event_seq(sub);       
     }
+
+    // print_hypotheses();
+
 }
 
 Event_t *predict(Event_t *seq)

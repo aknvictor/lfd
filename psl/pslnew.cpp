@@ -1,12 +1,16 @@
 
 #include "pslImplementation.h"
-// #include "approxmatch.h"
+#include "fstream"
+#include "cstring"
 
-#define DEBUG 1
+#define DEBUG 0
+
+using namespace std;
+
 int main(void)
 {
 
-    Event_t * events = new Event_t();
+    Event_t *events = new Event_t();
 
     EventUnion e;
 
@@ -42,7 +46,6 @@ int main(void)
 
     push(events, e, 2);
 
-    
     e.action.deltaangle = 'a';
     e.action.deltaX = 'a';
     e.action.deltaY = 'a';
@@ -132,10 +135,10 @@ int main(void)
     e.observation.diffangle = 'c';
 
     push(events, e, 2);
-    
-    Event_t * events_ = new Event_t();
 
-    EventUnion e_;    
+    Event_t *events_ = new Event_t();
+
+    EventUnion e_;
 
     e_.action.deltaangle = 'a';
     e_.action.deltaX = 'a';
@@ -148,77 +151,132 @@ int main(void)
 #else
 
     FILE *fp_in;
-   
-    if ((fp_in = fopen("../data/trainingdata.txt","r")) == 0) {
+    if ((fp_in = fopen("../data/trainingdata.txt", "r")) == 0)
+    {
         printf("Error can't open input trainingdata.txt\n");
         exit(0);
     }
 
-   int end_of_file;
-   float _da, _dx, _dy, _dz, _g, _dfx, _dfy, _dfz, _dfa;  
 
-    do{
+    ifstream inFile;
+    inFile.open("../data/trainingdata.txt");
 
-        end_of_file = fscanf(fp_in, "%f %f %f %f %f ", &_dx, &_dy, &_dz, &_da, &_g);
+    float _da, _dx, _dy, _dz, _g, _dfx, _dfy, _dfz, _dfa;
 
-        end_of_file = fscanf(fp_in, "%f %f %f %f ", &_dfx, &_dfy, &_dfz, &_dfa);
-        
-        e.action.deltaangle = _da;
-        e.action.deltaX = _dx;
-        e.action.deltaY = _dy;
-        e.action.deltaZ = _dz;
-        e.action.grasp = _g;
+    string line;
 
-        
-        push(events, e, 1);
+    bool actionread = false;
 
-        e.observation.diffZ = _dfz;
-        e.observation.diffY = _dfy;
-        e.observation.diffX = _dfx;
-        e.observation.diffangle = _dfa;
-    
-        push(events, e, 2);
-        
+    while (getline(inFile, line))
+    {
+        // cout << "\n";
+        if (line != "end" && line != "finish")
+        {
+
+            char *dup = strdup(line.c_str());
+            char *tokens = strtok(dup, " ");
+
+            if (!actionread)
+            {            
+                //read action
+
+                _dx = atof(dup);
+                tokens = strtok(NULL, " ");
+
+                _dy = atof(tokens);
+                tokens = strtok(NULL, " ");
+
+                _dz = atof(tokens);
+                tokens = strtok(NULL, " ");
+
+                _da = atof(tokens);
+                tokens = strtok(NULL, " ");
+
+                _g = atof(tokens);
+
+                actionread = true;
+
+                // printf("%f %f %f %f %f ", _dx, _dy, _dz, _da, _g);
+                
+                e.action.deltaangle = _da + 0.5;
+                e.action.deltaX = _dx + 0.5;
+                e.action.deltaY = _dy + 0.5;
+                e.action.deltaZ = _dz + 0.5;
+                e.action.grasp = _g;
+
+                push(events, e, 1);
+
+            }
+            else
+            {
+
+                //read obseration
+
+                actionread = false;
+
+                _dfx = atof(dup);
+                tokens = strtok(NULL, " ");
+
+                _dfy = atof(tokens);
+                tokens = strtok(NULL, " ");
+
+                _dfz = atof(tokens);
+                tokens = strtok(NULL, " ");
+
+                _dfa = atof(tokens);
+                tokens = strtok(NULL, " ");
+
+                // printf("%f %f %f %f ", _dfx, _dfy, _dfz, _dfa);
+                
+                e.observation.diffZ = _dfz + 0.5;
+                e.observation.diffY = _dfy + 0.5;
+                e.observation.diffX = _dfx + 0.5;
+                e.observation.diffangle = _dfa + 0.5;
+
+                push(events, e, 2);
+
+            }
+
+            free(dup);
+        }
     }
 
-    while (end_of_file != EOF);
+    Event_t *events_ = new Event_t();
+    
+    e.observation.diffZ = -17.447506 + 0.5;
+    e.observation.diffY = -87.288483 + 0.5;
+    e.observation.diffX = -25.784897 + 0.5;
+    e.observation.diffangle = -0.078953 + 0.5;
 
-    Event_t * events_ = new Event_t();
+    push(events_, e, 2);
 
-    EventUnion e_;
-
-    e_.observation.diffZ = 42.492157;
-    e_.observation.diffY = -80.858421;    
-    e_.observation.diffX = 2.681091;
-    e_.observation.diffangle = 0.336754 ;
-
-    push(events_, e_, 2);
 
 #endif
-    
+
     train(events, 0, getEventSeqLen(events) - 1);
 
-    delete events;
-
-    for(int i = 0; i< 5; i++)
+    for (int i = 0; i < 5; i++)
     {
-        Event_t * pred =  predict(events_);
+        Event_t *pred = predict(events_);
         push(events_, pred->event, pred->eventtype);
     }
 
-    printf("\n\n");
+    
     print_list(events_);
+
+    printf("\n\n");
+
     print_hypotheses();
 
     delete events_;
+    delete events;
 
     // string _a = "cacd";
-    // string _b = "bcbacbbb"; 
+    // string _b = "bcbacbbb";
 
     // dynamicprogramming(_a, _b, 0);
 
     free_hyp();
 
     return 0;
-
 }

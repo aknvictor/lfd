@@ -103,7 +103,7 @@ void executeCommand(int * channel, int * pos, int speed, int size);
  *  the caetesian pose specified 
  * @param x, y, z, pitch_angle_d, roll_angle_d
  */
-int *getJointPositions(float x, float y, float z, float pitch_angle_d, float roll_angle_d);
+bool getJointPositions(float x, float y, float z, float pitch_angle_d, float roll_angle_d, int positions []);
 
 
 /** 
