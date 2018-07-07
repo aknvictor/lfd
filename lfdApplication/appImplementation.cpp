@@ -7,7 +7,7 @@ void prompt_and_exit(int status)
     exit(status);
 }
 
-float *getObjectPose(InputArray frame, int * segmentation_values)
+float *getObjectPose(InputArray frame, int * segmentation_values, float width, float height)
 {
     int min_hue;
     int max_hue;
@@ -84,16 +84,16 @@ float *getObjectPose(InputArray frame, int * segmentation_values)
     {
         printf("found: %lu \n", ballsBox.size());
         //object 1
-        pose[0] = 20 * (ballsBox[0].center.x  / 640);    
-        pose[1] = 20 * (ballsBox[0].center.y  / 480);   
+        pose[0] = 20 * (ballsBox[0].center.x  / width);    
+        pose[1] = 20 * (ballsBox[0].center.y  / height);   
         pose[2] = 20 * ((ballsBox[0].angle + 360) / (720));
 
         if(ballsBox.size()> 1)
         {
             
             //object 2
-            pose[3] = 20 * (ballsBox[1].center.x  / 640);    
-            pose[4] = 20 * (ballsBox[1].center.y  / 480);   
+            pose[3] = 20 * (ballsBox[1].center.x  / width);    
+            pose[4] = 20 * (ballsBox[1].center.y  / height);   
             pose[5] = 20 * ((ballsBox[1].angle + 360) / (720));
         }
 

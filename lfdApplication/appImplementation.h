@@ -13,7 +13,7 @@ using namespace cv;
 
 void prompt_and_exit(int status);
 
-float *getObjectPose(InputArray frame, int * segmentation_values);
+float *getObjectPose(InputArray frame, int * segmentation_values, float width, float height);
 
 float *scale_and_map(int m_x, int m_y, int m_z, int m_rx, int m_ry, int m_rz);
 

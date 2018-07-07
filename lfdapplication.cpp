@@ -86,10 +86,15 @@ int main()
 
         prompt_and_exit(1);
     }
+    
+    float width = cap.get(CV_CAP_PROP_FRAME_WIDTH) ; 
+    float height = cap.get(CV_CAP_PROP_FRAME_HEIGHT) ;
+
+
 
 #if DEMO
 
-    printf("\n %s \n", "Commence demonstration");
+    printf("\n %s \n", "Commence demonstration"); 
 
     FILE *training_file = fopen("applicationData/trainingdata.txt", "a");
     FILE *training_file_2 = fopen("applicationData/trainingdata2.txt", "a");
@@ -171,11 +176,11 @@ int main()
 
                     cap >> frame;
                     //camera 1 (down ward facing)
-                    float *ff = getObjectPose(frame, segmentation_values);
+                    float *ff = getObjectPose(frame, segmentation_values, width, height );
 
                     cap2 >> frame2;
                     //camera 2 (side ward facing)
-                    float *ff2 = getObjectPose(frame2, segmentation_values);
+                    float *ff2 = getObjectPose(frame2, segmentation_values, width, height );
                     float *objectpose = new float[4]; //delta (x, y, z, theta)
                     objectpose[0] = ff[0];
                     objectpose[1] = ff[1];
@@ -356,10 +361,10 @@ int main()
             // Observation: objectpose - endeffector pose
 
             cap >> frame;
-            float *ff = getObjectPose(frame, segmentation_values);
+            float *ff = getObjectPose(frame, segmentation_values, width, height );
 
             cap2 >> frame2;
-            float *ff2 = getObjectPose(frame2, segmentation_values);
+            float *ff2 = getObjectPose(frame2, segmentation_values, width, height );
             float *objectpose = new float[4]; //delta (x, y, z, theta)
             objectpose[0] = -1.0;
             objectpose[1] = -1.0;
@@ -529,7 +534,7 @@ int main()
             sleep(2);
 
             cap >> frame;
-            float *ff = getObjectPose(frame, segmentation_values);
+            float *ff = getObjectPose(frame, segmentation_values, width, height );
 
             printf("\n %f %f %f \n", ff[0], ff[1], ff[2]);
 
