@@ -5,7 +5,7 @@
 #define TRAIN 1
 #define CALIBRATE 0
 #define DEMO 1
-#define CAM_IDX1 1
+#define CAM_IDX1 0
 #define CAM_IDX2 2
 
 using namespace std;

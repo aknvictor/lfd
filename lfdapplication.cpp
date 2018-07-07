@@ -75,7 +75,7 @@ int main()
     cv::VideoCapture cap2;
     cv::Mat frame2;
 
-    if (!cap.open(idx2))
+    if (!cap.open(idx))
     {
         cout << "Webcam not connected.\n"
              << "Please verify\n";
@@ -83,7 +83,7 @@ int main()
         prompt_and_exit(1);
     }
 
-    if (!cap2.open(idx))
+    if (!cap2.open(idx2))
     {
         cout << "Webcam not connected.\n"
              << "Please verify\n";
