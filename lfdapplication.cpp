@@ -22,27 +22,6 @@ int main()
 
     readRobotConfigurationData("applicationControl/robotConfig.txt");
 
-    // Frame Z = trans(0.0 ,0.0, 0.0);
-    // Frame A = roty(0.0);
-    // Frame B = rotz(0.0);
-    // Frame C = trans(0.0 ,0.0, robotConfigurationData.effector_z);
-    // Frame D = trans(0, 187.0, 216 + robotConfigurationData.effector_z) * A * B;
-    // Frame IZ = inv(Z);
-    // Frame IC = inv(C);
-    // Frame R = rotz(50);
-    // Frame E = IZ * D * IC * R;
-
-    // E.printFrame();
-    // move(E);
-
-   float bottom_left_x   = -92;      
-   float bottom_left_y   = 110;                                
-   float bottom_left_z   = 0;
-
-   float top_right_x    = 85;   
-   float top_right_y    = 235;
-   float top_right_z    = 0;
-
     float x = 0;
     float y = 120;
     float z = 200;
@@ -50,13 +29,9 @@ int main()
     float roll = -90;
     int graspVal = 0; //open
 
-    goHome();
+    gotoPose(x, y, z, pitch, roll);
+    grasp(25);
 
-    gotoPose(0.0, 187.0, 216.0, 0.0, -50.0);
-
-    gotoPose(-92.0, 110.0, 0, 0.0, 0.0);
-    
-    
     FILE *fp_in;
     if ((fp_in = fopen("applicationControl/objectTrackingInput.txt", "r")) == 0)
     {
@@ -104,31 +79,13 @@ int main()
         prompt_and_exit(1);
     }
 
-    float width = cap.get(CV_CAP_PROP_FRAME_WIDTH) ; 
-    float height = cap.get(CV_CAP_PROP_FRAME_HEIGHT) ;
-
-    printf("dim: %f, %f", width, height); 
-
-    imagePoint.x = width;
-    imagePoint.y = height;
-
-    inversePerspectiveTransformation(imagePoint, camera_model, 0, &worldPoint);
-
-    if (!cap2.open(idx2))
+    if (!cap2.open(idx))
     {
         cout << "Webcam not connected.\n"
              << "Please verify\n";
 
         prompt_and_exit(1);
     }
-
-    cap.set(CV_CAP_PROP_FRAME_WIDTH, 1024);
-    cap.set(CV_CAP_PROP_FRAME_HEIGHT, 768);
-
-    cap2.set(CV_CAP_PROP_FRAME_WIDTH, 1024);
-    cap2.set(CV_CAP_PROP_FRAME_HEIGHT, 768);
-
-
 
 #if DEMO
 
@@ -146,8 +103,6 @@ int main()
 
     spnav_event sev;
     signal(SIGINT, sig);
-
-    // spnav_sensitivity(0.1f);
 
     if (spnav_open() == -1)
     {
@@ -193,8 +148,8 @@ int main()
                     status = gotoPose(x, y, z + (poseDelta[2] < 0.0 ? -3 : 3), pitch, roll);
 
                 else if (index == 4)
-                    status = gotoPose(x, y, z, pitch, roll);
-                    // status = gotoPose(x, y, z, pitch, roll + (poseDelta[4] < 0.0 ? -3 : 3));
+                    // status = gotoPose(x, y, z, pitch, roll);
+                    status = gotoPose(x, y, z, pitch, roll + (poseDelta[4] < 0.0 ? -3 : 3));
 
                 //printf("\n status: %d \n", status );
                 if (status)
@@ -208,8 +163,8 @@ int main()
                     else if (index == 2)
                         z += (poseDelta[2] < 0.0 ? -3 : 3);
                     else if (index == 4)
-                        // roll += (poseDelta[4] < 0.0 ? -3 : 3);
-                        roll;
+                        roll += (poseDelta[4] < 0.0 ? -3 : 3);
+                        // roll;
                         
 
                     // Observation: objectpose - endeffector pose
@@ -222,10 +177,10 @@ int main()
                     //camera 2 (side ward facing)
                     float *ff2 = getObjectPose(frame2, segmentation_values);
                     float *objectpose = new float[4]; //delta (x, y, z, theta)
-                    objectpose[0] = -1.0;
-                    objectpose[1] = -1.0;
+                    objectpose[0] = ff[0];
+                    objectpose[1] = ff[1];
                     objectpose[2] = -1.0;
-                    objectpose[3] = -1.0;
+                    objectpose[3] = ff[2];
 
                     if (ff[0] != -1)
                     {
