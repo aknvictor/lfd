@@ -27,7 +27,7 @@ int main()
 
     goHome();
     gotoPose(x, y, z, pitch, roll);
-    grasp(25);
+    grasp(0);
 
     FILE *fp_in;
     if ((fp_in = fopen("applicationControl/objectTrackingInput.txt", "r")) == 0)

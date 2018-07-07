@@ -55,9 +55,6 @@ float *getObjectPose(InputArray frame, int * segmentation_values, float width, f
     cv::dilate(rangeRes, rangeRes, cv::Mat(), cv::Point(-1, -1), 2);
     // <<<<< Improving the result
 
-    // Thresholding viewing
-    cv::imshow("Threshold", rangeRes);
-
     // >>>>> Contours detection
     vector<vector<cv::Point> > contours;
     cv::findContours(rangeRes, contours, CV_RETR_EXTERNAL,

@@ -794,7 +794,7 @@ int pose_within_working_env(float x, float y, float z)
 
 int gotoPose(float x, float y, float z, float pitch, float roll)
 {
-    bool debug = false; 
+    bool debug = true; 
     int pos[6];       
     bool valid_pose;   
 
