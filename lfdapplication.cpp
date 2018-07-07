@@ -17,8 +17,6 @@ int main()
 
     inversePerspectiveTransformation(imagePoint, camera_model, 0, &worldPoint);
 
-    printf("%f", worldPoint.x);
-
     char PORT[13] = "/dev/ttyUSB0"; // USB Port ID on windows - "\\\\.\\COM9";
     char BAUD[7] = "9600";          // Baud Rate
     int speed = 300;                // Servo speed
@@ -34,7 +32,7 @@ int main()
 
     goHome(5);
 
-    gotoPose(worldPoint.x, worldPoint.y, worldPoint.z, pitch, roll);
+    gotoPose(worldPoint.x, worldPoint.y, z, pitch, roll);
     
     FILE *fp_in;
     if ((fp_in = fopen("applicationControl/objectTrackingInput.txt", "r")) == 0)
@@ -82,6 +80,16 @@ int main()
 
         prompt_and_exit(1);
     }
+
+    float width = cap.get(CV_CAP_PROP_FRAME_WIDTH) ; 
+    float height = cap.get(CV_CAP_PROP_FRAME_HEIGHT) ;
+
+    printf("dim: %f, %f", width, height); 
+
+    imagePoint.x = width;
+    imagePoint.y = height;
+
+    inversePerspectiveTransformation(imagePoint, camera_model, 0, &worldPoint);
 
     if (!cap2.open(idx2))
     {
