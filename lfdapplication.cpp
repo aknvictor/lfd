@@ -29,6 +29,7 @@ int main()
     float roll = -90;
     int graspVal = 0; //open
 
+    goHome();
     gotoPose(x, y, z, pitch, roll);
     grasp(25);
 
@@ -61,15 +62,10 @@ int main()
 
     // Camera Index
     int idx = CAM_IDX1;
-    int idx2 = CAM_IDX2;
 
     // Camera Capture
     cv::VideoCapture cap;
     cv::Mat frame;
-
-    // Camera Capture
-    cv::VideoCapture cap2;
-    cv::Mat frame2;
 
     if (!cap.open(idx))
     {
@@ -79,18 +75,9 @@ int main()
         prompt_and_exit(1);
     }
 
-    if (!cap2.open(idx))
-    {
-        cout << "Webcam not connected.\n"
-             << "Please verify\n";
-
-        prompt_and_exit(1);
-    }
     
     float width = cap.get(CV_CAP_PROP_FRAME_WIDTH) ; 
     float height = cap.get(CV_CAP_PROP_FRAME_HEIGHT) ;
-
-
 
 #if DEMO
 
@@ -171,39 +158,20 @@ int main()
                         roll += (poseDelta[4] < 0.0 ? -3 : 3);
                         // roll;
                         
-
                     // Observation: objectpose - endeffector pose
 
                     cap >> frame;
+
                     //camera 1 (down ward facing)
                     float *ff = getObjectPose(frame, segmentation_values, width, height );
-
-                    cap2 >> frame2;
-                    //camera 2 (side ward facing)
-                    float *ff2 = getObjectPose(frame2, segmentation_values, width, height );
                     float *objectpose = new float[4]; //delta (x, y, z, theta)
-                    objectpose[0] = ff[0];
-                    objectpose[1] = ff[1];
+                    
+                    objectpose[0] = x - ff[0];
+                    objectpose[1] = y - ff[1];
                     objectpose[2] = -1.0;
-                    objectpose[3] = ff[2];
+                    printf("\n Angle: %f \n", ff[2]);
+                    objectpose[3] = roll - ff[2];
 
-                    if (ff[0] != -1)
-                    {
-                        if (ff[3] != -1)
-                        {
-                            objectpose[0] = (ff[3] - ff[0]); //x
-                            objectpose[1] = (ff[4] - ff[1]); //y
-                            objectpose[3] = (ff[5] - ff[2]); //angle
-
-                            if (ff2[1] != -1)
-                            {
-                                if (ff2[4] != -1)
-                                {
-                                    objectpose[2] = +(ff2[4] - ff2[1]); //z
-                                }
-                            }
-                        }
-                    }
 
                     if (objectpose[0] != -1.0 && !(poseDelta[0] == 0.0 && poseDelta[1] == 0.0 && poseDelta[2] == 0.0 && poseDelta[3] == 0.0 && poseDelta[4] == 0.0))
                     {
@@ -363,36 +331,11 @@ int main()
             cap >> frame;
             float *ff = getObjectPose(frame, segmentation_values, width, height );
 
-            cap2 >> frame2;
-            float *ff2 = getObjectPose(frame2, segmentation_values, width, height );
             float *objectpose = new float[4]; //delta (x, y, z, theta)
-            objectpose[0] = -1.0;
-            objectpose[1] = -1.0;
+            objectpose[0] = x - ff[0];
+            objectpose[1] = y - ff[1];
             objectpose[2] = -1.0;
-            objectpose[3] = -1.0;
-
-            if (ff[0] != -1)
-            {
-                if (ff[3] != -1)
-                {
-                    objectpose[0] = (ff[3] - ff[0]);
-                    objectpose[1] = (ff[4] - ff[1]);
-                    objectpose[3] = (ff[5] - ff[2]);
-
-                    if (ff2[4] != -1)
-                    {
-                        if (ff2[1] != -1)
-                        {
-                            objectpose[2] = +(ff2[4] - ff[1]);
-                        }
-                    }
-                }
-            }
-
-            // objectpose[0] = -0.388363;
-            // objectpose[1] = -1.843223;
-            // objectpose[2] = -2.740281;
-            // objectpose[3] = -0.007023;
+            objectpose[3] = roll - ff[2];
 
             e.observation.diffX = objectpose[0] + 0.5;
             e.observation.diffY = objectpose[1] + 0.5;
@@ -428,7 +371,8 @@ int main()
                     x += (float) pred->event.action.deltaX;
                     y += (float) pred->event.action.deltaY;
                     z += (float) pred->event.action.deltaZ; 
-                    roll += 0.0; //(float) pred->event.action.deltaangle;
+                    // roll += 0.0; 
+                    roll += (float) pred->event.action.deltaangle;
                 }
             }
            
