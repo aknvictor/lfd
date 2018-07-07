@@ -46,8 +46,12 @@ float *getObjectPose(InputArray frame, int * segmentation_values, float width, f
 
     //cv::inRange(frmHsv, cv::Scalar(MIN_H_BLUE / 2, 100, 80),
     //            cv::Scalar(MAX_H_BLUE / 2, 255, 255), rangeRes);
-    cv::inRange(frmHsv, cv::Scalar(min_hue, min_sat, 80), // David Vernon: use parameter values for hue instead of hard-coded values
-                cv::Scalar(max_hue, max_sat, 255), rangeRes);
+	
+    cv::inRange(frmHsv, cv::Scalar(153, 77, 80), // David Vernon: use parameter values for hue instead of hard-coded values
+					cv::Scalar(173, 137, 255), rangeRes);
+    
+    // cv::inRange(frmHsv, cv::Scalar(min_hue, min_sat, 80), // David Vernon: use parameter values for hue instead of hard-coded values
+    //             cv::Scalar(max_hue, max_sat, 255), rangeRes);
     // <<<<< Color Thresholding
 
     // >>>>> Improving the result
