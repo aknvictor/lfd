@@ -44,14 +44,8 @@ float *getObjectPose(InputArray frame, int * segmentation_values, float width, f
     // Note: change parameters for different colors
     cv::Mat rangeRes = cv::Mat::zeros(frame.size(), CV_8UC1);
 
-    //cv::inRange(frmHsv, cv::Scalar(MIN_H_BLUE / 2, 100, 80),
-    //            cv::Scalar(MAX_H_BLUE / 2, 255, 255), rangeRes);
-	
-    cv::inRange(frmHsv, cv::Scalar(153, 77, 80), // David Vernon: use parameter values for hue instead of hard-coded values
-					cv::Scalar(173, 137, 255), rangeRes);
-    
-    // cv::inRange(frmHsv, cv::Scalar(min_hue, min_sat, 80), // David Vernon: use parameter values for hue instead of hard-coded values
-    //             cv::Scalar(max_hue, max_sat, 255), rangeRes);
+    cv::inRange(frmHsv, cv::Scalar(min_hue, min_sat, 80), // David Vernon: use parameter values for hue instead of hard-coded values
+                cv::Scalar(max_hue, max_sat, 255), rangeRes);
     // <<<<< Color Thresholding
 
     // >>>>> Improving the result
@@ -83,7 +77,7 @@ float *getObjectPose(InputArray frame, int * segmentation_values, float width, f
 
     if(ballsBox.size()> 0)
     {
-        printf("found: %lu \n", ballsBox.size());
+        printf("found: %lu (%f, %f) \n", ballsBox.size(), ballsBox[0].center.x, ballsBox[0].center.y);
         //object 1
         pose[0] = 20 * (ballsBox[0].center.x  / width);    
         pose[1] = 20 * (ballsBox[0].center.y  / height);   
