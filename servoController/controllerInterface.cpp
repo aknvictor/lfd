@@ -565,7 +565,7 @@ void sendToSerialPort(char *command)
     if (debug) printf("%s\n", execcommand);
 
     system(execcommand);
-    sleep(5);
+    // sleep(5);
     
 }
 
