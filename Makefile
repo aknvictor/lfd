@@ -1,16 +1,16 @@
 CC = g++
-CFLAGS = -pedantic -Wall -g -I../.. -I/usr/local/include 
-LDFLAGS = -L../.. -L/usr/local/lib -lspnav -lX11 -lm controller/controllerInterface.cpp psl/pslImplementation.cpp psl/approxmatch.cpp app/appImplementation.cpp
+CFLAGS = -pedantic -Wall -g -std=c++0x -I../.. -I/usr/local/include 
+LDFLAGS = -L../.. -L/usr/local/lib -lspnav -lX11 -lm servoController/controllerInterface.cpp predictiveSeqLearning/pslImplementation.cpp predictiveSeqLearning/approxmatch.cpp lfdApplication/appImplementation.cpp cameraInvPerspectiveMonocular/cameraInvPerspectiveMonocularImplementation.cpp
 
 OPENCV = `pkg-config opencv --cflags --libs`
 LIBS = $(OPENCV)
 
 .PHONY: all
-all: main
+all: application
 
-main: app.cpp
-	$(CC) $(CFLAGS) -DBUILD_AF_UNIX -o $@ $< $(LDFLAGS) $(LIBS)
+application: lfdapplication.cpp
+	$(CC) $(CFLAGS) -DBUILD_AF_UNIX -o application $< $(LDFLAGS) $(LIBS)
 
 .PHONY: clean
 clean:
-	rm -f main
+	rm -f application
