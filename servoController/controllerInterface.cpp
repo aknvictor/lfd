@@ -1,376 +1,624 @@
-//controllerinterface.c
-
-//todo
-//validation
-//memory
+/*******************************************************************************************************************
+ *   Task-level robot programming for a LynxMotion AL5D robot arm
+ *
+ *   Interface file
+ *
+ *******************************************************************************************************************/
 
 #include "controllerInterface.h"
 
-//Helper function prototypes
+/***************************************************************************************************************************
 
-void fail(char *message);
-int getTimeNeeded(int idx, int destination, int speed);
-int getDistance(int idx, int destination);
-int getPW(int idx);
+   Definitions for reading robot configuration data 
 
-#define DEFAULT_SLEEP_TIME 1
+****************************************************************************************************************************/
+
+#define MAX_FILENAME_LENGTH 80
+#define STRING_LENGTH 200
+#define KEY_LENGTH 20
+#define NUMBER_OF_KEYS 8
+typedef char keyword[KEY_LENGTH];
+    
+
+/***************************************************************************************************************************
+
+   Definitions for servo control 
+
+****************************************************************************************************************************/
+
+#define DEFAULT_SLEEP_TIME 5   
 #define COMMAND_SIZE 200
 #define MAX_SERVOS 32
 #define MIN_PW 750  //lowest pulse width
 #define MAX_PW 2250 //highest pulsewidth
 
-//working environment 
 
-#define MAX_X 150
-#define MAX_Y 200
-#define MAX_Z 250
-#define MIN_X -150
-#define MIN_Y 100
-#define MIN_Z 90
+#define MIN_X -130
+#define MAX_X  130
+#define MIN_Y   80
+#define MAX_Y  330
+#define MIN_Z    0
+#define MAX_Z  380
 
-#define MAX_R 0
-#define MIN_R -120
+#define _USE_MATH_DEFINES          
+#define MAX_MESSAGE_LENGTH 81
 
-// #define MAX(x, y) (((x) > (y)) ? (x) : (y))
-// #define MIN(x, y) (((x) < (y)) ? (x) : (y))
+/* Kinematics: arm dimensions (mm) for AL5D arm */
 
-char PORT[20];
-char BAUD[6];
-int ACTIVE_SERVOS_COUNT = 5;
-int SPEED;
-int MESASGE_LENGTH = 500;
-int offset = 0; //pin starting point. Ideally the first servo would be connected to pin 0
-
-int defaultPulseWidths[32] = {1460, 1450, 1490, 1430, 1440, 1800, 2200, 2000, 2000, 2000, 1500, 2000, 1500, 750, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500};
-int currentPulseWidths[32] = {1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500};
-
-/** 
- *  intialize the port and baurate global variables
- *  @param port - port number of the USB serial
- *  @param baudrate - baud rate of the USB serial
- *  @param speed - servo speed
-*/
-void initializeControllerWithSpeed(char *port, char *baudrate, int speed)
-{
-    strcpy(PORT, port);
-    strcpy(BAUD, baudrate);
-    SPEED = speed;
-}
-
-/**
- * Set global speed of all servos
- */
-void setSpeed(int speed)
-{
-    SPEED = speed;
-}
-
-/** 
- *  intialize the port and baurate global variables
- *  @param port - port number of the USB serial
- *  @param baudrate - baud rate of the USB serial
-*/
-void initializeController(char *port, char *baudrate)
-{
-    strcpy(PORT, port);
-    strcpy(BAUD, baudrate);
-}
-
-/** 
- * set the positions of the servos connected to 
- * the controller to their default positions
- * @param numberOfServos 
- */
-void goHome(int numberOfServos)
-{
-    printf("%s\n", "going home");
-
-    if (numberOfServos > MAX_SERVOS)
-    {
-        char * message = new char[MESASGE_LENGTH];
-        sprintf(message, "Maximum number of servos is %d", MAX_SERVOS);
-        fail(message);
-        delete[] message;
-    }
-
-    ACTIVE_SERVOS_COUNT = numberOfServos;
-
-    int * channels = new int[ACTIVE_SERVOS_COUNT];
-    int * pos = new int[ACTIVE_SERVOS_COUNT];
-    
-    for (int i = 0; i < ACTIVE_SERVOS_COUNT; i++)
-    {
-        channels[i] = i + offset;
-        pos[i] = defaultPulseWidths[i+ offset];
-    }
-
-    executeCommand(channels, pos, SPEED, ACTIVE_SERVOS_COUNT);
-
-    delete [] channels;
-    delete [] pos;
-
-    grasp(0);
-
-}
-
-/** 
- * set the positions of the servos connected to 
- * the controller to their default positions
- * @param numberOfServos 
- */
-void goHome2(int numberOfServos)
-{
-    ACTIVE_SERVOS_COUNT = numberOfServos;
-    if (numberOfServos > MAX_SERVOS)
-    {
-        char * message = new char[MESASGE_LENGTH];
-        sprintf(message, "Maximum number of servos is %d", MAX_SERVOS);
-        fail(message);
-        delete[] message;
-    }
-
-    ACTIVE_SERVOS_COUNT = numberOfServos;
-
-    for (int i = 0; i < ACTIVE_SERVOS_COUNT ; i++)
-    {
-        goServoHome(i);
-    }
-
-}
-
-/** 
- * set the position of the specified servo to its default position
- * @param index
- */
-void goServoHome(int index)
-{
-    if (index >= ACTIVE_SERVOS_COUNT)
-    {
-        char * message = new char[MESASGE_LENGTH];
-        sprintf(message, "Servo not active");
-        fail(message);
-        delete[] message;
-    }
-
-    char commandbuilder[COMMAND_SIZE];
-    char command[COMMAND_SIZE];
-
-    //#channel Ppulsewidth Sspeed <carriage_return>
-
-    index = index + offset;
-
-    //printf("\n #%dP%dS%d <CR> \n",  index, defaultPulseWidths[index], SPEED);
-
-    sprintf(commandbuilder, " #%dP%dS%d", index, defaultPulseWidths[index], SPEED);
-    sprintf(command, "echo \"%s\" > %s", commandbuilder, PORT);
-
-    system(command);
-    currentPulseWidths[index] = defaultPulseWidths[index];
-
-    sleep(DEFAULT_SLEEP_TIME);
-}
-
-/**
- * Set specific servo pulse width
- * @param index, index of the servo
- * @param pw, pulse width
- */
-void setServoPW(int index, int pw)
-{
-    if (index >= ACTIVE_SERVOS_COUNT)
-    {
-        char * message = new char[MESASGE_LENGTH];
-        sprintf(message, "Servo not active");
-        fail(message);
-        delete[] message;
-    }
-
-    index = index + offset;
-
-    if (pw < MIN_PW || pw > MAX_PW)
-    {
-
-        char * message = new char[MESASGE_LENGTH];
-        sprintf(message, "Pulse width not in range");
-        fail(message);
-
-        delete[] message;
-        
-    }
-
-    char commandbuilder[COMMAND_SIZE];
-    char command[COMMAND_SIZE];
-
-    //#channel Ppulsewidth Sspeed <carriage_return>
-
-    sprintf(commandbuilder, " #%dP%dS%d <CR>", index, pw, SPEED);
-    sprintf(command, "echo \"%s\" > %s", commandbuilder, PORT);
-
-    currentPulseWidths[index] = pw;
-
-    system(command);
-    sleep(DEFAULT_SLEEP_TIME);
-    //sleep(getTimeNeeded(index, pw, SPEED));
-
-}
-
-void executeCommand(int * channel, int * pos, int speed, int size)
-{
-    char commandbuilder[COMMAND_SIZE] = {0};
-    
-    for(int i =0; i< size; i++)
-    {
-
-        char temp[COMMAND_SIZE] = {0};
-
-        if(i == 0)
-        sprintf(temp, " #%dP%d", channel[i], pos[i]);
-        else
-        sprintf(temp, " #%dP%dS%d", channel[i], pos[i], speed);
-
-        strcat(commandbuilder, temp);
-        strcat(commandbuilder, " ");
-
-        currentPulseWidths[i] = pos[i];
-
-    }
-
-    execute(commandbuilder);
-
-}
-
-void executeCommand(int channel, int pos, int speed)
-{
-
-    channel = channel + offset;
-
-    SPEED = speed;
-    char command[200];
-
-    //setServoPW(channel, pos);
-
-    sprintf(command, " #%dP%dS%d <CR>", channel, pos, speed);
-
-    execute(command);
-}
-
-/**
- * Set specific command
- * @param command, string to send to device - 
- * #channel Ppulsewidth Sspeed <carriage_return>
- */
-void execute(char *command)
-{
-
-    if (strlen(command) < 6)
-    {
-        char *message = new char[MESASGE_LENGTH];
-        sprintf(message, "Invalid command. Should be of size %d at least", 6);
-        fail(message);
-
-        delete[] message;
-        
-    }
-    else
-    {
-        char execcommand[COMMAND_SIZE];
-
-        sprintf(execcommand, "echo \"%s\" > %s", command, PORT);
-
-        //printf("%s\n", execcommand);
-        
-        system(execcommand);
-    }
-
-    // sleep(DEFAULT_SLEEP_TIME);f
-
-}
-
-//helper methods
-
-/**
- * Print failure message and return
- * @param message, output message
- */
-void fail(char *message)
-{
-    printf("%s\n", message);
-    exit(1);
-}
-
-/**
- * Gets the time needed to complete the movement
- * Time = Distance / Speed
- * @param idx, index of the servo
- * @param destination, destination pulse width
- * @param speed, the speed being used
- */
-int getTimeNeeded(int idx, int destination, int speed)
-{
-    int neededTime;
-    int distance = getDistance(idx, destination);
-    neededTime = distance / speed;
-    return neededTime;
-}
-
-/**
- * Gets the distance between the current position and the destination
- * @param idx, index of the servo
- * @param destination, destination pulse width
- */
-int getDistance(int idx, int destination)
-{
-    int distance = abs(getPW(idx) - destination);
-    return distance;
-}
-
-/**
- * Get pulse width of specified servo
- * @param idx, index of the servo
- */
-int getPW(int idx)
-{
-    return currentPulseWidths[idx];
-}
-
-// method to recieve cartesian coordinates and translate to joint positions (pulse widths)
-
-//inverse kinematics routine
-
-//inverse kinematics code authored by Prof. Vernon
-
-/* Arm dimensions (mm). Standard AL5D arm */
 #define D1 70       // Base height to X/Y plane
 #define A3 146.0    // Shoulder-to-elbow "bone"
 #define A4 187.0    // Elbow-to-wrist "bone"
 #define EZ 100      // Gripper length
-#define DEG_PW 0.09 //degrees to pulse width conversion factor
+#define GRIPPER_OPEN    25
+#define GRIPPER_CLOSED  0
 
-int zeroOffset[7];
 
-float degrees(float radians)
+/******************************************************************************
+
+ Robot configuration data: global to allow access from implementation functions
+
+*******************************************************************************/
+    
+struct robotConfigurationDataType robotConfigurationData;
+
+
+/***********************************************************************************************************************
+
+   Frame and vector classes to support task-level robot programming 
+   ----------------------------------------------------------------
+
+   Interface to the Frame and Vector classes and auxilliary friend functions required to implement a robot control program
+   by specifying the position and orientation of objects and the robot manipulator using homogeneous transformations
+   
+   Author: David Vernon, Carnegie Mellon University Africa in Rwanda
+   Date:   22/02/2017
+
+***********************************************************************************************************************/
+
+
+Vector::Vector(double x, double y, double z, double w) { 
+   coefficient[0] = x; 
+   coefficient[1] = y;
+   coefficient[2] = z;
+   coefficient[3] = w;
+}
+
+void Vector::setValues(double x, double y, double z, double w) { 
+   coefficient[0] = x; 
+   coefficient[1] = y;
+   coefficient[2] = z;
+   coefficient[3] = w;
+}
+
+void Vector::getValues(double &x, double &y, double &z, double &w) { 
+   x = coefficient[0]; 
+   y = coefficient[1];
+   z = coefficient[2];
+   w = coefficient[3];
+}
+
+void Vector::printVector()const {
+  int i;
+   
+   for (i=0; i<4; i++) {
+     printf("%4.1f ",coefficient[i]);
+   }
+   printf("\n\n");
+}
+ 
+Vector operator+(Vector &a, Vector &b) { 
+   return Vector(a.coefficient[0] / a.coefficient[3] + b.coefficient[0] / b.coefficient[3], 
+                 a.coefficient[1] / a.coefficient[3] + b.coefficient[1] / b.coefficient[3], 
+                 a.coefficient[2] / a.coefficient[3] + b.coefficient[2] / b.coefficient[3],
+                 1); //friend access
+}
+
+double dotProduct(Vector &a, Vector &b) {
+
+   double result;
+
+   result = a.coefficient[0] / a.coefficient[3] * b.coefficient[0] / b.coefficient[3] +
+            a.coefficient[1] / a.coefficient[3] * b.coefficient[1] / b.coefficient[3] +
+            a.coefficient[2] / a.coefficient[3] * b.coefficient[2] / b.coefficient[3]; //friend access;
+
+    return result;
+}
+
+Frame::Frame() { 
+   int i, j;
+   
+   for (i=0; i<4; i++) {
+      for (j=0; j<4; j++) {
+         if (i==j)
+            coefficient[i][j] = 1; 
+         else
+            coefficient[i][j] = 0; 
+      }
+   }
+}
+
+void Frame::printFrame()const {
+   int i, j;
+   
+   printf("\n");
+   for (i=0; i<4; i++) {
+      for (j=0; j<4; j++) {
+         printf("%4.1f ",coefficient[i][j]);
+      }
+      printf("\n");
+   }
+   printf("\n");
+}
+ 
+Frame &Frame::operator*(Frame &h) { 
+
+   Frame result;
+   double temp;
+   int i, j, k;
+   bool debug = false;
+
+   if (debug) {
+      printf("Operator *\n");
+      this->printFrame();
+      h.printFrame();
+   }
+
+   for (i=0; i<4; i++) {
+      for (j=0; j<4; j++) {
+         temp = 0;
+         for (k=0; k<4; k++) { 
+            temp = temp + (this->coefficient[i][k]) * (h.coefficient[k][j]);
+         } 
+         result.coefficient[i][j] = temp; 
+      }
+   } 
+
+   for (i=0; i<4; i++) {
+      for (j=0; j<4; j++) {
+         this->coefficient[i][j] = result.coefficient[i][j]; 
+      }
+   } 
+
+   if (debug) this->printFrame();
+
+   return *this;
+}
+
+Frame &Frame::operator=(Frame &h) { 
+   int i, j;
+   bool debug = false;
+
+   if (debug) {
+      printf("Operator =\n");
+      h.printFrame();
+   }
+
+   for (i=0; i<4; i++) {
+      for (j=0; j<4; j++) {
+         this->coefficient[i][j] = h.coefficient[i][j];
+      }
+   }
+
+  if (debug) this->printFrame();
+
+   return *this;
+}
+
+/* translation by vector (x, y, z) */
+
+Frame trans(float x, float y, float z) {
+      
+   Frame result;
+
+   int i, j;
+   bool debug = false;
+
+   if (debug) {
+      printf("trans %f %f %f\n",x, y, z);
+   }
+
+   for (i=0; i<4; i++) {
+      for (j=0; j<4; j++) {
+         result.coefficient[i][j] = 0;
+      }
+   }
+
+   result.coefficient[0][0] = 1;
+   result.coefficient[1][1] = 1;
+   result.coefficient[2][2] = 1;
+   result.coefficient[3][3] = 1;
+
+   result.coefficient[0][3] = x;
+   result.coefficient[1][3] = y;
+   result.coefficient[2][3] = z;
+
+  if (debug) result.printFrame();
+
+  return result;
+}
+
+
+/* rotation about x axis by theta degrees */
+
+Frame rotx(float theta) {
+         
+   Frame result;
+   double thetaRadians;
+   int i, j;
+   bool debug = false;
+
+   if (debug) {
+      printf("rotx %f\n",theta);
+   }
+
+   /* convert theta to radians */
+
+   thetaRadians = (3.14159 * theta) / 180.0;
+
+   for (i=0; i<4; i++) {
+      for (j=0; j<4; j++) {
+         result.coefficient[i][j] = 0;
+      }
+   }
+
+   result.coefficient[0][0] = 1;
+   result.coefficient[0][1] = 0;
+   result.coefficient[0][2] = 0;
+
+   result.coefficient[1][0] = 0;
+   result.coefficient[1][1] = cos(thetaRadians);
+   result.coefficient[1][2] = -sin(thetaRadians);;
+
+   result.coefficient[2][0] = 0;
+   result.coefficient[2][1] = sin(thetaRadians);
+   result.coefficient[2][2] = cos(thetaRadians);
+
+   result.coefficient[3][3] = 1;
+
+  if (debug) result.printFrame();
+
+  return result;
+}
+
+
+/* rotation about y axis by theta degrees */
+
+Frame roty(float theta) {
+         
+   Frame result;
+   double thetaRadians;
+   int i, j;
+   bool debug = false;
+
+   if (debug) {
+      printf("roty %f\n",theta);
+   }
+
+   /* convert theta to radians */
+
+   thetaRadians = (3.14159 * theta) / 180.0;
+
+   for (i=0; i<4; i++) {
+      for (j=0; j<4; j++) {
+         result.coefficient[i][j] = 0;
+      }
+   }
+
+   result.coefficient[0][0] = cos(thetaRadians);
+   result.coefficient[0][1] = 0;
+   result.coefficient[0][2] = sin(thetaRadians);
+
+   result.coefficient[1][0] = 0;
+   result.coefficient[1][1] = 1;
+   result.coefficient[1][2] = 0;
+
+   result.coefficient[2][0] = -sin(thetaRadians);
+   result.coefficient[2][1] = 0;
+   result.coefficient[2][2] = cos(thetaRadians);
+
+   result.coefficient[3][3] = 1;
+
+  if (debug) result.printFrame();
+
+  return result;
+}
+
+
+Frame inv(Frame h) { 
+
+   Vector u, v;
+   Frame result;
+
+   int i, j;
+   //double dp;
+   bool debug = false;
+
+   if (debug) {
+      printf("inv \n");
+      h.printFrame();
+   }
+
+   for (i=0; i<3; i++) {
+      for (j=0; j<3; j++) {
+         result.coefficient[j][i] = h.coefficient[i][j]; // transpose the rotation part
+      }
+   }
+
+   for (j=0; j<4; j++) {
+      result.coefficient[3][j] = h.coefficient[3][j];    // copy the scaling part
+   }
+
+   
+   v.setValues(h.coefficient[0][3], h.coefficient[1][3], h.coefficient[2][3], h.coefficient[3][3]); // p
+
+   u.setValues(h.coefficient[0][0], h.coefficient[1][0], h.coefficient[2][0], 1); // n
+   result.coefficient[0][3] = -dotProduct(u,v);
+ 
+   u.setValues(h.coefficient[0][1], h.coefficient[1][1], h.coefficient[2][1], 1); // o 
+   result.coefficient[1][3] = -dotProduct(u,v);
+ 
+   u.setValues(h.coefficient[0][2], h.coefficient[1][2], h.coefficient[2][2], 1); // a
+   result.coefficient[2][3] = -dotProduct(u,v);
+ 
+   result.coefficient[3][3] = 1;
+
+   if (debug) result.printFrame();
+
+   return result;
+}
+
+
+
+/* rotation about z axis by theta degrees */
+
+Frame rotz(float theta) {
+         
+   Frame result;
+   double thetaRadians;
+   int i, j;
+   bool debug = false;
+
+   if (debug) {
+      printf("rotz %f\n",theta);
+   }
+
+   /* convert theta to radians */
+
+   thetaRadians = (3.14159 * theta) / 180.0;
+
+   for (i=0; i<4; i++) {
+      for (j=0; j<4; j++) {
+         result.coefficient[i][j] = 0;
+      }
+   }
+
+   result.coefficient[0][0] = cos(thetaRadians);
+   result.coefficient[0][1] = -sin(thetaRadians);
+   result.coefficient[0][2] = 0;
+
+   result.coefficient[1][0] = sin(thetaRadians);
+   result.coefficient[1][1] = cos(thetaRadians);
+   result.coefficient[1][2] = 0;
+
+   result.coefficient[2][0] = 0;
+   result.coefficient[2][1] = 0;
+   result.coefficient[2][2] = 1;
+
+   result.coefficient[3][3] = 1;
+
+  if (debug) result.printFrame();
+
+  return result;
+}
+
+/* Extract the parameters from the T5 frame and pass them to gotoPose() */
+
+/* DV fixed bug in computation of pitch parameter  8/6/2018 */
+
+bool move(Frame T5) {
+
+   bool debug = false;
+
+   double ax, ay, az; // components of approach vector
+   double ox, oy, oz; // components of orientation vector
+   double px, py, pz; // components of position vector
+
+   double tolerance = 0.001;
+   double r;
+   double pitch;
+   double roll;
+
+   /* check to see if the pose is achievable:                                                                */
+   /* the approach vector must be aligned with (i.e. in same plane as) the vector from the base to the wrist */
+   /* (unless the approach vector is directed vertically up or vertically down                               */
+
+   // T5.printFrame();
+
+   ox = T5.coefficient[0][1];
+   oy = T5.coefficient[1][1];
+   oz = T5.coefficient[2][1];
+
+   ax = T5.coefficient[0][2];
+   ay = T5.coefficient[1][2];
+   az = T5.coefficient[2][2];
+
+   px = T5.coefficient[0][3];
+   py = T5.coefficient[1][3];
+   pz = T5.coefficient[2][3];
+
+
+   if (true) {
+         T5.printFrame();
+         // printf("move(): px,py %4.1f %4.1f  ax,ay %4.1f %4.1f angles  %4.1f %4.1f \n", px, py, ax, ay, 180*atan2(py, px)/3.14159, 180*atan2(ay, ax)/3.14159);
+   }
+
+   if (( ax > -tolerance && ax < tolerance && ay > -tolerance && ay < tolerance)  // vertical approach vector
+       ||
+       (abs(atan2(ay, ax) - atan2(py, px)) < tolerance)) {  
+
+      /* achievable pose                           */
+      /* extract the pitch and roll angles from T5 */
+
+      /* pitch */
+      r = sqrt(ax*ax + ay*ay);
+
+      if (r < tolerance) {      // vertical orientation vector
+         pitch = 0;
+         if (az < 0) {          // get direction right
+            pitch = -180;
+         }
+      }
+      else {
+         pitch = -degrees(atan2(r, az)); // DV change to negative angle since pitch range is -180 to 0     8/6/2018
+      }
+       
+      /* roll */
+      roll =   degrees(atan2(ox, oy));
+
+      if (true || debug) {
+         printf("move(): x, y, z, pitch, roll: %4.1f %4.1f %4.1f %4.1f %4.1f \n", px, py, pz, pitch, roll);
+      }
+
+      gotoPose((float) px, (float) py, (float) pz, (float) pitch, (float) roll);
+
+      return true;
+   }
+   else {
+
+      printf("move(): pose not achievable: approach vector and arm are not aligned \n");
+      printf("        atan2(py, px) %f; atan2(ay, ax)  %f\n",180*atan2(py, px)/3.14159, 180*atan2(ay, ax)/3.14159);
+
+      return false; // approach vector and arm are not aligned ... pose is not achievable
+   }
+}
+
+
+
+/******************************************************************************
+   
+   Serial port interface 
+
+   Based on code written by Victor Akinwande, Carnegie Mellon University Africa
+   
+   Modified by: David Vernon, Carnegie Mellon University Africa
+
+*******************************************************************************/
+
+/** 
+ *  intialize the port, baud rate, and speed global variables
+*/
+
+
+void goHome() {
+
+    executeCommand(robotConfigurationData.channel, robotConfigurationData.home, robotConfigurationData.speed, 6);
+}
+
+
+/* execute command for multiple servo motors */
+
+void executeCommand(int *channel, int *pos, int speed, int number_of_servos) {
+
+    char command[COMMAND_SIZE] = {0};
+
+    for(int i =0; i< number_of_servos; i++) {
+
+        char temp[COMMAND_SIZE] = {0};
+        sprintf(temp, " #%dP%d", channel[i], pos[i]); // David Vernon ... added space before #; without this port 0 is not affected
+
+        strcat(command, temp);
+
+        sprintf(temp, "S%d", robotConfigurationData.speed); // David Vernon ... append the speed argument to each servo command 
+        strcat(command, temp);                              // David Vernon
+
+        strcat(command, " ");
+  
+    }
+     
+    sendToSerialPort(command);
+}
+
+
+/* execute command for single servo motor */
+
+void executeCommand(int channel, int pos, int speed) {
+
+    char command[200];
+
+    sprintf(command, " #%dP%dS%d ", channel, pos, speed); // David Vernon ... added space before # ... without this port 0 is not affected
+                                                          // also removed the <CR> after the command
+    sendToSerialPort(command);
+}
+
+/* send the command to the serial port with the echo OS primitive */
+/* do this with the system() function                             */
+
+void sendToSerialPort(char *command)
 {
-    float degrees = radians * 180.0 / M_PI;
+    bool debug = false;  
+    char execcommand[COMMAND_SIZE];
+
+    if (debug && false) printf("execute(): %s \n", command);
+
+    sprintf(execcommand, "echo \"%s\" > %s", command, robotConfigurationData.com);
+
+    if (debug) printf("%s\n", execcommand);
+
+    system(execcommand);
+    sleep(5);
+    
+}
+
+
+/********************************************************************
+
+   Inverse kinematics for LynxMotion AL5D robot manipulator
+
+*********************************************************************/
+
+double degrees(double radians)
+{
+    double degrees = radians * (double) 180.0 / (double) M_PI; // David Vernon ... cast to float
     return degrees;
 }
 
-float radians(float degrees)
+double radians(double degrees)
 {
-    float radians = degrees / (180.0 / M_PI);
+    double radians = degrees / ((double) 180.0 / (double) M_PI); // David Vernon ... cast to float
     return radians;
 }
 
-bool getJointPositions(float x, float y, float z, float pitch_angle_d, float roll_angle_d, int positions[])
-{
+
+/* Arm positioning routine using inverse kinematics
+ 
+   Z is height, Y is distance from base center out, X is side to side. Y, Z can only be positive.
+   Input dimensions are for the WRIST 
+   If resulting arm position is physically unreachable, return false.
+
+   This code is an extended version of the code written by Oleg mazurov and Eric Goldsmith (see header)
+   The revisions include the removal of the dependency on the end-effector (gripper) distance
+   so that it computes the inverse kinematics for T5, the position and orientation of the wrist
+   Also, the roll angle was added.  Minor changes have been made to the variable names; more are necessary
+   to make it readable and consistent with Denavit-Hartenberg notation 
+
+   David Vernon
+   3 March 2017
+   
+   Audit trail
+   -----------
+
+   7 June 2018: modified to use robot configuration data reflecting the calibration of individual robots DV
+   8 June 2018: fixed a number of bugs in the inverse kinematic solution
+*/
+
+bool getJointPositions(float x, float y, float z, float pitch_angle_d, float roll_angle_d, int positions[]) {
 
     int zeroOffset[6];  
-    float pw_per_degree[6];
 
-    bool debug = false; // David Vernon
+    bool debug = false; 
+    int i;
 
     if (debug) printf("getJointPositions(): %4.1f %4.1f %4.1f %4.1f %4.1f\n", x, y, z, pitch_angle_d, roll_angle_d);
-
-    // int *positions = (int*) malloc(sizeof(int) * 6); // David Vernon  ... commented out
 
     double hum_sq;
     double uln_sq;
@@ -385,24 +633,10 @@ bool getJointPositions(float x, float y, float z, float pitch_angle_d, float rol
     uln_sq = A4 * A4;
 
     /* Set the servo angles corresponding to joint angles of zero */
-                                                                
-    /* need to read these value from a configuration file to allow calibration of different robots                                  */
-    /* Also need to calibrate the degree-to-pulse-width value DEG_PW, possibly on a servo by servo basis                            */
-    /* finally, need to move this out of this function so that the values only computed once and the array is passed as an argument */
-  
-    /* from calibration */
 
-    pw_per_degree[0] = (float) 10.1;
-    pw_per_degree[1] = (float) 8.9;
-    pw_per_degree[2] = (float) 9.1;
-    pw_per_degree[3] = (float) 10.0;
-    pw_per_degree[4] = (float) 10.7;
-
-    zeroOffset[0] = (int) (1460 / pw_per_degree[0]);
-    zeroOffset[1] = (int) (1450 / pw_per_degree[1]);
-    zeroOffset[2] = (int) (1490 / pw_per_degree[2]);
-    zeroOffset[3] = (int) (1430 / pw_per_degree[3]);
-    zeroOffset[4] = (int) (1440 / pw_per_degree[4]);
+    for (i=0; i<5; i++) {
+       zeroOffset[i] = (int) ((float)robotConfigurationData.home[i] / robotConfigurationData.degree[i]);
+    }
 
     // Base angle and radial distance from x,y coordinates
     double bas_angle_r = atan2(x, y);
@@ -435,7 +669,7 @@ bool getJointPositions(float x, float y, float z, float pitch_angle_d, float rol
         return false;          // David Vernon ... not a valid pose 
 
     double shl_angle_d = degrees(shl_angle_r);
-    
+
     // Elbow angle
 
     double elb_angle_r = acos((hum_sq + uln_sq - s_w) / (2 * A3 * A4)); // David Vernon ... cast to float
@@ -458,7 +692,16 @@ bool getJointPositions(float x, float y, float z, float pitch_angle_d, float rol
     double wri_pitch_angle_d = (pitch_angle_d - elb_angle_dn) - shl_angle_d + 90;
 
     // if (((int)pitch_angle_d == -90) || ((int)pitch_angle_d == 90)) // original code
-    if (((int)pitch_angle_d == -180) || ((int)pitch_angle_d == 180))  // directed vertically up or down
+    if (((int) pitch_angle_d == 0))  // directed vertically up
+    {
+
+        /* special case: we can adjust the required roll to compensate for the base rotation */
+
+        // wri_roll_angle_d = roll_angle_d - bas_angle_d;   // original code
+        wri_roll_angle_d = roll_angle_d + bas_angle_d + 90; // gripper orientation aligned with y axis
+
+    }
+    else if (((int) pitch_angle_d == -180) || ((int) pitch_angle_d == 180))  // directed vertically down
     {
 
         /* special case: we can adjust the required roll to compensate for the base rotation */
@@ -469,7 +712,8 @@ bool getJointPositions(float x, float y, float z, float pitch_angle_d, float rol
     else
     {
         // should really throw an exception here because this isn't the correct
-        wri_roll_angle_d = roll_angle_d;
+        wri_roll_angle_d = roll_angle_d; // original code
+        wri_roll_angle_d = roll_angle_d + 90;
     }
 
     // Calculate servo angles
@@ -477,111 +721,218 @@ bool getJointPositions(float x, float y, float z, float pitch_angle_d, float rol
     bas_pos       = bas_angle_d                   + zeroOffset[0];
     shl_pos       = (shl_angle_d  - (float) 90.0) + zeroOffset[1];  
     elb_pos       = -(elb_angle_d - (float) 90.0) + zeroOffset[2];  
-    wri_pitch_pos = wri_pitch_angle_d             + zeroOffset[3];     
-    // wri_roll_pos  = wri_roll_angle_d              + zeroOffset[4]; // David Vernon ... roll servor rotates in reverse
-    wri_roll_pos  = - wri_roll_angle_d            + zeroOffset[4];    //                  with the medium duty wrist attachment
-    
+    wri_pitch_pos = wri_pitch_angle_d             + zeroOffset[3];
+    if (robotConfigurationData.lightweightWrist == true) {
+       wri_roll_pos  = - wri_roll_angle_d         + zeroOffset[4];            
+    }
+    else {
+       wri_roll_pos  =   wri_roll_angle_d         + zeroOffset[4]; // roll servo rotates in reverse with the medium duty wrist attachment
+    }
+
+    //if (wri_roll_pos > 90) wri_roll_pos = wri_roll_pos - 180; // NEW CHECK
+    //if (wri_roll_pos < 90) wri_roll_pos = wri_roll_pos + 180; // NEW CHECK
+
     if (debug) {
-       printf("X: %4.1f ",x);
-       printf("Y: %4.1f ",y); // DV THIS HAS BEEN OVERWRITTEN IN ORIGINAL CODE
-       printf("Z: %4.1f ",z);
-       printf("pitch: %4.1f ",pitch_angle_d);
-       printf("roll:  %4.1f \n",roll_angle_d);
-       printf("Base Pos: %4.1f ",bas_pos);
-       printf("Shld Pos: %4.1f ",shl_pos);
-       printf("Elbw Pos: %4.1f ",elb_pos);
-       printf("Pitch Pos: %4.1f ",wri_pitch_pos);
-       printf("Roll Pos: %4.1f \n",wri_roll_pos);
-       printf("bas angle: %4.1f ",degrees(bas_angle_r));
-       printf("shl angle: %4.1f ",shl_angle_d);
-       printf("elb angle: %4.1f ",elb_angle_d);
-       printf("Pitch d: %4.1f ",wri_pitch_angle_d);
-       printf("Roll  d: %4.1f ",wri_roll_angle_d);
+       printf("X:         %4.1f \n",x);
+       printf("Y:         %4.1f \n",y); // DV THIS HAS BEEN OVERWRITTEN IN ORIGINAL CODE
+       printf("Z:         %4.1f \n",z);
+       printf("pitch:     %4.1f \n",pitch_angle_d);
+       printf("roll:      %4.1f \n",roll_angle_d);
+       printf("Base Pos:  %4.1f \n",bas_pos);
+       printf("Shld Pos:  %4.1f \n",shl_pos);
+       printf("Elbw Pos:  %4.1f \n",elb_pos);
+       printf("Pitch Pos: %4.1f \n",wri_pitch_pos);
+       printf("Roll Pos:  %4.1f \n",wri_roll_pos);
+       printf("bas angle: %4.1f \n",degrees(bas_angle_r));
+       printf("shl angle: %4.1f \n",shl_angle_d);
+       printf("elb angle: %4.1f \n",elb_angle_d);
+       printf("Pitch d:   %4.1f \n",wri_pitch_angle_d);
+       printf("Roll  d:   %4.1f \n",wri_roll_angle_d);
        printf("\n");
     }
 
-    //convert angles in degrees to pulse width based on calibration data
-    pw_per_degree[0] = (float) 10.1;
-    pw_per_degree[1] = (float)  8.9;
-    pw_per_degree[2] = (float)  9.1;
-    pw_per_degree[3] = (float) 10.0;
-    pw_per_degree[4] = (float) 10.7;
-
-    positions[0] = (int)(bas_pos       * pw_per_degree[0]);
-    positions[1] = (int)(shl_pos       * pw_per_degree[1]);
-    positions[2] = (int)(elb_pos       * pw_per_degree[2]);
-    positions[3] = (int)(wri_pitch_pos * pw_per_degree[3]);
-    positions[4] = (int)(wri_roll_pos  * pw_per_degree[4]);
+    positions[0] = (int)(bas_pos       * robotConfigurationData.degree[0]);
+    positions[1] = (int)(shl_pos       * robotConfigurationData.degree[1]);
+    positions[2] = (int)(elb_pos       * robotConfigurationData.degree[2]);
+    positions[3] = (int)(wri_pitch_pos * robotConfigurationData.degree[3]);
+    positions[4] = (int)(wri_roll_pos  * robotConfigurationData.degree[4]);
 
     return true; // David Vernon ... valid pose
 }
 
-
 void grasp(int d) // d is distance between finger tips:  0 <= d <= 30 mm
 {
 
-  /* the grippers are approximately 30mm apart (i.e. fully open) when open at servo PW of 860 
-   * and 0mm apart (i.e. closed) when closed at servo PW of 2500
-   * Thus, we close to approximately d mm with a PW of 2500 - d* (2500-860) / 30
+  /* The gripper is controlled by servo 6
+   *
+   * The calibration data are stored in element 5 of the home[], degree[], and channel[] arrays
+   * in the global robotConfigurationData structure
+   *
+   * The gripper is approximately 30mm apart (i.e. fully open) when at the servo setpoint given by home[5]
+   *
+   * A (closing) distance of 1 mm is given by the PW defined by degree[5] array
+   * and, a gripper opening distance of d mm is given by home[5] + (30-d) * degree[5]
    */
 
-    int pw;
-    pw = (int) (2500 - (float (d) * (2500-860) / 30 ));
+   bool debug = true;
 
-    executeCommand(5, pw, SPEED *2);  // gripper servo is on pin 5
+   int pw;
+   pw = robotConfigurationData.home[5] + (int) (float (30-d) * robotConfigurationData.degree[5]);
+
+   if (debug) {
+      printf("grasp: %d\n",d);
+     // printf("grasp: d %d  PW %d\n", d, pw);
+   }
+   executeCommand(robotConfigurationData.channel[5], pw, robotConfigurationData.speed * 2);   
 }
 
-int pose_within_working_env(float x, float y, float z, float r)
+int pose_within_working_env(float x, float y, float z)
 {
-    int w = (int)x <= MAX_X && (int) x > MIN_X && (int)y <= MAX_Y && (int) y > MIN_Y && (int)z <= MAX_Z && (int) z > MIN_Z && (int)r <= MAX_R && (int) r > MIN_R; 
-
-    if(w)  return 1;
+    if((int)x <= MAX_X && (int) x > MIN_X && (int)y <= MAX_Y && (int) y > MIN_Y && (int)z <= MAX_Z && (int) z > MIN_Z ) return 1;
     else return 0;
 }
 
 int gotoPose(float x, float y, float z, float pitch, float roll)
 {
-    if(!pose_within_working_env(x, y, z, roll)) return 0;
-    printf("Cartesian pose: \n  %f %f %f %f %f \n", x, y, z, pitch, roll);
+    bool debug = false; 
+    int pos[6];       
+    bool valid_pose;   
 
-    int * poss = new int [6];
+    if (!pose_within_working_env(x, y, z)) {
+       printf("gotoPose() error: %4.1f %4.1f %4.1f not in working envelope\n", x, y, z);
+       //return 0;
+    }
 
-    bool status = getJointPositions(x, y, z, pitch, roll, poss );
+    if (debug) printf("gotoPose(): %4.1f %4.1f %4.1f %4.1f %4.1f\n", x, y, z, pitch, roll);
 
-    if (status)
-    {
-        int * channels = new int [5];
-        int * pos = new int [5];
+    valid_pose = getJointPositions(x, y, z, pitch, roll, pos);
 
-        channels[0] = 0 + offset;
-        channels[1] = 1 + offset;
-        channels[2] = 2 + offset;
-        channels[3] = 3 + offset;
-        channels[4] = 4 + offset;
-
-        pos[0] = MIN(MAX_PW, MAX(MIN_PW, poss[0]));
-        pos[1] = MIN(MAX_PW, MAX(MIN_PW, poss[1]));
-        pos[2] = MIN(MAX_PW, MAX(MIN_PW, poss[2]));
-        pos[3] = poss[3];
-        pos[4] = poss[4];
+    if (valid_pose) {
         
+       if (debug) printf("gotoPose(): %d %d %d %d %d \n", pos[0], pos[1],  pos[2], pos[3], pos[4]);
 
-        executeCommand(0, poss[0], SPEED);
-        executeCommand(1, poss[1], SPEED);
-        executeCommand(2, poss[2], SPEED);
-        executeCommand(3, poss[3], SPEED);
-        executeCommand(4, poss[4], SPEED);
+        executeCommand(robotConfigurationData.channel, pos, robotConfigurationData.speed, 5);
 
-        // executeCommand(channels, pos, SPEED, 5);
-
-        // printf("Joint pos: \n %d %d %d %d %d \n", poss[0], poss[1],  poss[2], poss[3], poss[4]);
+        return 1;
     }
-    else
-    {
-        printf("Joint pos: Unatainable \n");
+    else {
+       printf("gotoPose() error: not a valid pose for this robot\n");
+       return 0;
     }
-
-    delete [] poss;
-    return status;
-
 }
+
+
+/*=======================================================*/
+/* Robot configuration function                          */ 
+/*=======================================================*/
+
+void readRobotConfigurationData(char filename[]) {
+      
+   bool debug = false;
+   int i; 
+   int j;
+   int k;
+
+   keyword keylist[NUMBER_OF_KEYS] = {
+	   "com",
+      "baud",
+      "speed",
+      "channel",
+      "home",
+      "degree",
+      "effector",
+      "wrist"
+   };
+
+   keyword key;                  // the key string when reading parameters
+   keyword value;                // the value string, used for the WRIST key
+
+   char input_string[STRING_LENGTH];
+   FILE *fp_config;       
+
+   if ((fp_config = fopen(filename,"r")) == 0) {
+	   printf("Error can't open robot configuration file %s\n",filename);
+       exit(1);
+   }
+
+   /*** get the key-value pairs ***/
+
+   for (i=0; i<NUMBER_OF_KEYS; i++) {
+		
+      fgets(input_string, STRING_LENGTH, fp_config);
+      //if (debug)  printf ("Input string: %s",input_string);
+
+      /* extract the key */
+
+      sscanf(input_string, " %s", key);
+
+      for (j=0; j < (int) strlen(key); j++)
+         key[j] = tolower(key[j]);
+       
+      //if (debug)  printf ("key: %s\n",key);
+
+      for (j=0; j < NUMBER_OF_KEYS; j++) {
+         if (strcmp(key,keylist[j]) == 0) {
+            switch (j) {
+            case 0:  sscanf(input_string, " %s %s", key, robotConfigurationData.com);     // com  
+                     break;
+            case 1:  sscanf(input_string, " %s %d", key, &(robotConfigurationData.baud));  // baud
+                     break;
+            case 2:  sscanf(input_string, " %s %d", key, &(robotConfigurationData.speed)); // speed
+                     break;
+            case 3:  sscanf(input_string, " %s %d %d %d %d %d %d", key,                    // channel
+                                                                   &(robotConfigurationData.channel[0]), 
+                                                                   &(robotConfigurationData.channel[1]), 
+                                                                   &(robotConfigurationData.channel[2]), 
+                                                                   &(robotConfigurationData.channel[3]), 
+                                                                   &(robotConfigurationData.channel[4]), 
+                                                                   &(robotConfigurationData.channel[5]));
+                     break;
+            case 4:  sscanf(input_string, " %s %d %d %d %d %d %d", key,                    // home
+                                                                   &(robotConfigurationData.home[0]), 
+                                                                   &(robotConfigurationData.home[1]), 
+                                                                   &(robotConfigurationData.home[2]), 
+                                                                   &(robotConfigurationData.home[3]), 
+                                                                   &(robotConfigurationData.home[4]), 
+                                                                   &(robotConfigurationData.home[5]));                 
+                     break;
+            case 5:  sscanf(input_string, " %s %f %f %f %f %f %f", key,                    // degree
+                                                                   &(robotConfigurationData.degree[0]), 
+                                                                   &(robotConfigurationData.degree[1]), 
+                                                                   &(robotConfigurationData.degree[2]), 
+                                                                   &(robotConfigurationData.degree[3]), 
+                                                                   &(robotConfigurationData.degree[4]), 
+                                                                   &(robotConfigurationData.degree[5]));  
+                     break;
+            case 6:  sscanf(input_string, " %s %d %d %d", key,                           // effector
+                                                          &(robotConfigurationData.effector_x),  
+                                                          &(robotConfigurationData.effector_y), 
+                                                          &(robotConfigurationData.effector_z));                                                    
+                     break;
+            case 7:  sscanf(input_string, " %s %s ", key, value);                        // wrist
+                     for (j=0; j < (int) strlen(value); j++)
+                        value[j] = tolower(value[j]);
+                     if (strcmp(value,"lightweight")==0) {
+                        robotConfigurationData.lightweightWrist = true;
+                     }
+                     else {
+                        robotConfigurationData.lightweightWrist = false;
+                     }
+                     break;
+            }
+         }
+      }
+   }
+
+   if (debug) { 
+      printf("COM:      %s\n",robotConfigurationData.com);
+      printf("BAUD:     %d\n",robotConfigurationData.baud);
+      printf("SPEED:    %d\n",robotConfigurationData.speed);
+      printf("CHANNEL:  "); for (k=0; k<6; k++) printf("%d ", robotConfigurationData.channel[k]);   printf("\n");
+      printf("HOME:     "); for (k=0; k<6; k++) printf("%d ", robotConfigurationData.home[k]);      printf("\n");
+      printf("DEGREE:   "); for (k=0; k<6; k++) printf("%3.1f ", robotConfigurationData.degree[k]); printf("\n");
+      printf("EFFECTOR: "); printf("%d %d %d \n", robotConfigurationData.effector_x, robotConfigurationData.effector_y, robotConfigurationData.effector_z);
+      printf("WRIST:    "); printf("%s \n", value);
+   }
+}
+

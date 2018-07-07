@@ -14,9 +14,8 @@ int main(int argc, char ** argv)
     float roll = 0;
     int graspVal = 60;
 
-    initializeControllerWithSpeed(PORT, BAUD, speed);
 
-    goHome(5);
+    goHome();
 
     printf("%d", gotoPose(0, 200, 120 , -180, -90));
     

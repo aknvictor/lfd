@@ -1,8 +1,9 @@
 //controller.cpp
 
-#include "servoController/controllerInterface.h"
 #include "lfdApplication/appImplementation.h"
+#include "servoController/controllerInterface.h"
 #include "cameraInvPerspectiveMonocular/cameraInvPerspectiveMonocular.h"
+
 
 struct timespec counter, start, pressKey, releaseKey;
 
@@ -17,9 +18,30 @@ int main()
 
     inversePerspectiveTransformation(imagePoint, camera_model, 0, &worldPoint);
 
-    char PORT[13] = "/dev/ttyUSB0"; // USB Port ID on windows - "\\\\.\\COM9";
-    char BAUD[7] = "9600";          // Baud Rate
-    int speed = 300;                // Servo speed
+    extern robotConfigurationDataType robotConfigurationData;
+
+    readRobotConfigurationData("applicationControl/robotConfig.txt");
+
+    // Frame Z = trans(0.0 ,0.0, 0.0);
+    // Frame A = roty(0.0);
+    // Frame B = rotz(0.0);
+    // Frame C = trans(0.0 ,0.0, robotConfigurationData.effector_z);
+    // Frame D = trans(0, 187.0, 216 + robotConfigurationData.effector_z) * A * B;
+    // Frame IZ = inv(Z);
+    // Frame IC = inv(C);
+    // Frame R = rotz(50);
+    // Frame E = IZ * D * IC * R;
+
+    // E.printFrame();
+    // move(E);
+
+   float bottom_left_x   = -92;      
+   float bottom_left_y   = 110;                                
+   float bottom_left_z   = 0;
+
+   float top_right_x    = 85;   
+   float top_right_y    = 235;
+   float top_right_z    = 0;
 
     float x = 0;
     float y = 120;
@@ -28,11 +50,12 @@ int main()
     float roll = -90;
     int graspVal = 0; //open
 
-    initializeControllerWithSpeed(PORT, BAUD, speed);
+    goHome();
 
-    goHome(5);
+    gotoPose(0.0, 187.0, 216.0, 0.0, -50.0);
 
-    gotoPose(worldPoint.x, worldPoint.y, z, pitch, roll);
+    gotoPose(-92.0, 110.0, 0, 0.0, 0.0);
+    
     
     FILE *fp_in;
     if ((fp_in = fopen("applicationControl/objectTrackingInput.txt", "r")) == 0)
