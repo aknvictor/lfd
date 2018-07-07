@@ -16,10 +16,6 @@ int main()
     Point2f imagePoint;
     Point3f worldPoint;
 
-    inversePerspectiveTransformation(imagePoint, camera_model, 0, &worldPoint);
-
-    extern robotConfigurationDataType robotConfigurationData;
-
     readRobotConfigurationData("applicationControl/robotConfig.txt");
 
     float x = 0;
@@ -166,9 +162,15 @@ int main()
                     float *ff = getObjectPose(frame, segmentation_values, width, height );
                     float *objectpose = new float[4]; //delta (x, y, z, theta)
                     
-                    objectpose[0] = x - ff[0];
-                    objectpose[1] = y - ff[1];
-                    objectpose[2] = -1.0;
+                   imagePoint.x = ff[0];
+                   imagePoint.y = ff[1];
+
+                   inversePerspectiveTransformation(imagePoint, camera_model, 0, &worldPoint);
+                    
+                    objectpose[0] = x - worldPoint.x;
+                    objectpose[1] = y -  worldPoint.y;
+                    objectpose[2] = z - worldPoint.z;
+
                     printf("\n Angle: %f \n", ff[2]);
                     objectpose[3] = roll - ff[2];
 
@@ -332,9 +334,14 @@ int main()
             float *ff = getObjectPose(frame, segmentation_values, width, height );
 
             float *objectpose = new float[4]; //delta (x, y, z, theta)
-            objectpose[0] = x - ff[0];
-            objectpose[1] = y - ff[1];
-            objectpose[2] = -1.0;
+            imagePoint.x = ff[0];
+            imagePoint.y = ff[1];
+
+            inversePerspectiveTransformation(imagePoint, camera_model, 0, &worldPoint);
+            
+            objectpose[0] = x - worldPoint.x;
+            objectpose[1] = y -  worldPoint.y;
+            objectpose[2] = z - worldPoint.z;
             objectpose[3] = roll - ff[2];
 
             e.observation.diffX = objectpose[0] + 0.5;
