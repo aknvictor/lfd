@@ -25,6 +25,9 @@ int main()
     float roll = -90;
     int graspVal = 0; //open
 
+    int last_action_x, last_action_y, last_action_z, last_action_theta, last_action_grasp;
+    int last_obs_x, last_obs_y, last_obs_z, last_obs_theta, last_obs_grasp;
+
     goHome();
     gotoPose(x, y, z, pitch, roll);
     grasp(0);
@@ -80,8 +83,6 @@ int main()
     printf("\n %s \n", "Commence demonstration"); 
 
     FILE *training_file = fopen("applicationData/trainingdata.txt", "a");
-    FILE *training_file_2 = fopen("applicationData/trainingdata2.txt", "a");
-    
 
     if (training_file == NULL)
     {
@@ -178,20 +179,26 @@ int main()
                     if (objectpose[0] != -1.0 && !(poseDelta[0] == 0.0 && poseDelta[1] == 0.0 && poseDelta[2] == 0.0 && poseDelta[3] == 0.0 && poseDelta[4] == 0.0))
                     {
                         
-                        printf( " %d %d %d %d %d\n", index == 0 ? poseDelta[0] < 0.0 ? -3 : 3 : 0, index == 1 ? poseDelta[1] < 0.0 ? -3 : 3 : 0, index == 2 ? poseDelta[2] < 0.0 ? -3 : 3 : 0, index == 4 ? poseDelta[4] < 0.0 ? -3 : 3 : 0, (int) graspVal);
-                        fprintf(training_file_2, " %d %d %d %d %d\n", index == 0 ? poseDelta[0] < 0.0 ? -3 : 3 : 0, index == 1 ? poseDelta[1] < 0.0 ? -3 : 3 : 0, index == 2 ? poseDelta[2] < 0.0 ? -3 : 3 : 0, index == 4 ? poseDelta[4] < 0.0 ? -3 : 3 : 0, (int) graspVal);
+                        last_action_x = index == 0 ? poseDelta[0] < 0.0 ? -3 : 3 : 0;
+                        last_action_y = index == 0 ? poseDelta[1] < 0.0 ? -3 : 3 : 0;
+                        last_action_z = index == 0 ? poseDelta[2] < 0.0 ? -3 : 3 : 0;
+                        last_action_theta = index == 0 ? poseDelta[4] < 0.0 ? -3 : 3 : 0;
+                        last_action_grasp = graspVal;
 
+                        printf( " %d %d %d %d %d\n",  last_action_x, last_action_y, last_action_z, last_action_theta, last_action_x, last_action_grasp);
+                   
                         //endeffector and object differential pose
 
-                        objectpose[0] += 0.5;
-                        objectpose[1] += 0.5;
-                        objectpose[2] += 0.5;
-                        objectpose[3] += 0.5;
+                        last_obs_x = (int) (objectpose[0] += 0.5);
+                        last_obs_y = (int) (objectpose[1] += 0.5);
+                        last_obs_z = (int) (objectpose[2] += 0.5);
+                        last_obs_theta = (int) (objectpose[3] += 0.5);
+                        last_obs_grasp = graspVal;
 
-                        printf(" %d %d %d %d %d\n", (int) objectpose[0], (int) objectpose[1], (int) objectpose[2], (int) objectpose[3], (int) graspVal);
-                        fprintf(training_file_2, " %d %d %d %d %d\n", (int) (objectpose[0]/2.0), (int) (objectpose[1]/2.0), (int) (objectpose[2]/2.0), (int) (objectpose[3]/2.0), (int) graspVal);
-                    
+                        printf(" %d %d %d %d %d\n", last_obs_x, last_obs_y, last_obs_z, last_obs_theta, last_obs_grasp);
+                 
                     }
+
                 }
             }
         }
@@ -206,6 +213,11 @@ int main()
                 printf("%d\n", graspVal);
                 grasp(graspVal);
 
+                last_action_grasp = graspVal;                
+                printf( " %d %d %d %d %d\n",  last_action_x, last_action_y, last_action_z, last_action_theta, last_action_x, last_action_grasp);
+                last_obs_grasp = graspVal;
+                printf(" %d %d %d %d %d\n", last_obs_x, last_obs_y, last_obs_z, last_obs_theta, last_obs_grasp);
+                
             }
 
             else if (sev.button.bnum == 1)
@@ -237,7 +249,6 @@ int main()
                     {
 
                         fprintf(training_file, "%s\n", "finish");
-                        fprintf(training_file_2, "%s\n", "finish");
                         printf("\n %s \n", "End of current Demonstration");
 
                         gotoPose(0, 120, 200 , pitch, -90);

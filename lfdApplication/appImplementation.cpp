@@ -77,7 +77,7 @@ float *getObjectPose(InputArray frame, int * segmentation_values, float width, f
 
     if(ballsBox.size()> 0)
     {
-        printf("found: %d (%f, %f) \n", (int) ballsBox.size(), ballsBox[0].center.x, ballsBox[0].center.y);
+        printf("found: %d (%f, %f, %f) \n", (int) ballsBox.size(), ballsBox[0].center.x, ballsBox[0].center.y, ballsBox[0].angle);
         //object 1
         pose[0] = ballsBox[0].center.x;    
         pose[1] = ballsBox[0].center.y;   
