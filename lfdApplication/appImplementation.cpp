@@ -223,8 +223,7 @@ void hyptrain()
     ifstream inFile;
     inFile.open("applicationData/trainingdata.txt");
     
-    float _da, _dx, _dy, _dz, _g, _dfx, _dfy, _dfz, _dfa;
-
+    int _da, _dx, _dy, _dz, _g, _dfx, _dfy, _dfz, _dfa, _dfg;
     string line;
 
     bool actionread = false;
@@ -234,7 +233,6 @@ void hyptrain()
 
     while (getline(inFile, line))
     {
-        // cout << "\n";
         if (line != "end")
         {
             if(line == "finish")
@@ -245,31 +243,14 @@ void hyptrain()
                 continue;
             }
 
-            char *dup = strdup(line.c_str());
-            char *tokens = strtok(dup, " ");
-
             if (!actionread)
             {            
                 //read action
-
-                _dx = atof(dup);
-                tokens = strtok(NULL, " ");
-
-                _dy = atof(tokens);
-                tokens = strtok(NULL, " ");
-
-                _dz = atof(tokens);
-                tokens = strtok(NULL, " ");
-
-                _da = atof(tokens);
-                tokens = strtok(NULL, " ");
-
-                _g = atof(tokens);
+                
+                sscanf(line.c_str(), " %d %d %d %d %d", &_dx, &_dy, &_dz, &_da, &_g);                                                
 
                 actionread = true;
 
-                // printf("%f %f %f %f %f ", _dx, _dy, _dz, _da, _g);
-                
                 e.action.deltaangle = _da;
                 e.action.deltaX = _dx;
                 e.action.deltaY = _dy;
@@ -281,46 +262,24 @@ void hyptrain()
             }
             else
             {
-
                 //read obseration
 
                 actionread = false;
-
-                _dfx = atof(dup);
-                tokens = strtok(NULL, " ");
-
-                _dfy = atof(tokens);
-                tokens = strtok(NULL, " ");
-
-                _dfz = atof(tokens);
-                tokens = strtok(NULL, " ");
-
-                _dfa = atof(tokens);
-                tokens = strtok(NULL, " "); 
+                sscanf(line.c_str(), " %d %d %d %d %d", &_dfx, &_dfy, &_dfz, &_dfa, &_dfg); 
                 
-                _g = atof(tokens);
-                tokens = strtok(NULL, " ");
-
-                // printf("%f %f %f %f ", _dfx, _dfy, _dfz, _dfa);
-                
-                e.observation.diffZ = (_dfz);
-                e.observation.diffY = (_dfy);
-                e.observation.diffX = (_dfx);
-                e.observation.diffangle = (_dfa);
-                e.observation.grasp = (_g);
+                e.observation.diffZ = _dfz;
+                e.observation.diffY = _dfy;
+                e.observation.diffX =  _dfz;
+                e.observation.diffangle = _dfa;
+                e.observation.grasp = _dfg;
 
                 push(events, e, 2);
 
             }
-
-            free(dup);
         }
         else
             break;
     }
-
-    
-    // train(events, 0, getEventSeqLen(events) - 1);
 
     delete events;
 

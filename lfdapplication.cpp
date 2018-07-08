@@ -30,7 +30,7 @@ int main()
 
     goHome();
     gotoPose(x, y, z, pitch, roll);
-    grasp(0);
+    grasp(GRIPPER_OPEN);
 
     FILE *fp_in;
     if ((fp_in = fopen("applicationControl/objectTrackingInput.txt", "r")) == 0)

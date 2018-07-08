@@ -3,7 +3,7 @@
 #include "fstream"
 #include "cstring"
 
-#define DEBUG 1
+#define DEBUG 0
 
 using namespace std;
 
@@ -159,7 +159,7 @@ int main(void)
     ifstream inFile;
     inFile.open("../applicationData/trainingdata.txt");
 
-    float _da, _dx, _dy, _dz, _g, _dfx, _dfy, _dfz, _dfa;
+    int _da, _dx, _dy, _dz, _g, _dfx, _dfy, _dfz, _dfa, _dfg;
 
     string line;
 
@@ -167,7 +167,6 @@ int main(void)
 
     while (getline(inFile, line))
     {
-        // cout << "\n";
         if (line != "end")
         {
             if(line == "finish")
@@ -178,30 +177,14 @@ int main(void)
                 continue;
             }
 
-            char * dup = strdup(line.c_str());
-            char *tokens = strtok(dup, " ");
-
             if (!actionread)
             {            
                 //read action
-
-                _dx = atof(dup);
-                tokens = strtok(NULL, " ");
-
-                _dy = atof(tokens);
-                tokens = strtok(NULL, " ");
-
-                _dz = atof(tokens);
-                tokens = strtok(NULL, " ");
-
-                _da = atof(tokens);
-                tokens = strtok(NULL, " ");
-
-                _g = atof(tokens);
+                sscanf(line.c_str(), " %d %d %d %d %d", &_dx, &_dy, &_dz, &_da, &_g);                                
 
                 actionread = true;
 
-                // printf("%f %f %f %f %f ", _dx, _dy, _dz, _da, _g);
+                printf("%d %d %d %d %d ", _dx, _dy, _dz, _da, _g);
                 
                 e.action.deltaangle = _da + 0.5;
                 e.action.deltaX = _dx + 0.5;
@@ -214,35 +197,23 @@ int main(void)
             }
             else
             {
-
                 //read obseration
 
                 actionread = false;
 
-                _dfx = atof(dup);
-                tokens = strtok(NULL, " ");
-
-                _dfy = atof(tokens);
-                tokens = strtok(NULL, " ");
-
-                _dfz = atof(tokens);
-                tokens = strtok(NULL, " ");
-
-                _dfa = atof(tokens);
-                tokens = strtok(NULL, " ");
-
-                // printf("%f %f %f %f ", _dfx, _dfy, _dfz, _dfa);
+                sscanf(line.c_str(), " %d %d %d %d %d", &_dfx, &_dfy, &_dfz, &_dfa, &_dfg);                               
+                
+                printf("%d %d %d %d ", _dfx, _dfy, _dfz, _dfa);
                 
                 e.observation.diffZ = _dfz + 0.5;
                 e.observation.diffY = _dfy + 0.5;
                 e.observation.diffX = _dfx + 0.5;
                 e.observation.diffangle = _dfa + 0.5;
+                e.observation.grasp = _dfg + 0.5;
 
                 push(events, e, 2);
 
             }
-
-            free(dup);
         }
     }
 
