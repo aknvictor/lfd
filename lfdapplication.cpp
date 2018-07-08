@@ -180,9 +180,9 @@ int main()
                     {
                         
                         last_action_x = index == 0 ? poseDelta[0] < 0.0 ? -3 : 3 : 0;
-                        last_action_y = index == 0 ? poseDelta[1] < 0.0 ? -3 : 3 : 0;
-                        last_action_z = index == 0 ? poseDelta[2] < 0.0 ? -3 : 3 : 0;
-                        last_action_theta = index == 0 ? poseDelta[4] < 0.0 ? -3 : 3 : 0;
+                        last_action_y = index == 1 ? poseDelta[1] < 0.0 ? -3 : 3 : 0;
+                        last_action_z = index == 2 ? poseDelta[2] < 0.0 ? -3 : 3 : 0;
+                        last_action_theta = index == 4 ? poseDelta[4] < 0.0 ? -3 : 3 : 0;
                         last_action_grasp = graspVal;
 
                         printf( " %d %d %d %d %d\n",  last_action_x, last_action_y, last_action_z, last_action_theta, last_action_grasp);
