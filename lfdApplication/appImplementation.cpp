@@ -270,7 +270,7 @@ void hyptrain()
 
                 // printf("%f %f %f %f %f ", _dx, _dy, _dz, _da, _g);
                 
-                e.action.deltaangle = 0.0;
+                e.action.deltaangle = _da;
                 e.action.deltaX = _dx;
                 e.action.deltaY = _dy;
                 e.action.deltaZ = _dz;
@@ -306,7 +306,7 @@ void hyptrain()
                 e.observation.diffZ = (_dfz);
                 e.observation.diffY = (_dfy);
                 e.observation.diffX = (_dfx);
-                e.observation.diffangle = (0.0);
+                e.observation.diffangle = (_dfa);
                 e.observation.grasp = (_g);
 
                 push(events, e, 2);

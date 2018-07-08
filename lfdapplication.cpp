@@ -178,7 +178,7 @@ int main()
                     if (objectpose[0] != -1.0 && !(poseDelta[0] == 0.0 && poseDelta[1] == 0.0 && poseDelta[2] == 0.0 && poseDelta[3] == 0.0 && poseDelta[4] == 0.0))
                     {
                         
-                        fprintf(training_file, " %d %d %d %d %d\n", index == 0 ? poseDelta[0] < 0.0 ? -3 : 3 : 0, index == 1 ? poseDelta[1] < 0.0 ? -3 : 3 : 0, index == 2 ? poseDelta[2] < 0.0 ? -3 : 3 : 0, index == 4 ? poseDelta[4] < 0.0 ? -3 : 3 : 0, (int) graspVal);
+                        printf( " %d %d %d %d %d\n", index == 0 ? poseDelta[0] < 0.0 ? -3 : 3 : 0, index == 1 ? poseDelta[1] < 0.0 ? -3 : 3 : 0, index == 2 ? poseDelta[2] < 0.0 ? -3 : 3 : 0, index == 4 ? poseDelta[4] < 0.0 ? -3 : 3 : 0, (int) graspVal);
                         fprintf(training_file_2, " %d %d %d %d %d\n", index == 0 ? poseDelta[0] < 0.0 ? -3 : 3 : 0, index == 1 ? poseDelta[1] < 0.0 ? -3 : 3 : 0, index == 2 ? poseDelta[2] < 0.0 ? -3 : 3 : 0, index == 4 ? poseDelta[4] < 0.0 ? -3 : 3 : 0, (int) graspVal);
 
                         //endeffector and object differential pose
@@ -188,7 +188,7 @@ int main()
                         objectpose[2] += 0.5;
                         objectpose[3] += 0.5;
 
-                        fprintf(training_file, " %d %d %d %d %d\n", (int) objectpose[0], (int) objectpose[1], (int) objectpose[2], (int) objectpose[3], (int) graspVal);
+                        printf(" %d %d %d %d %d\n", (int) objectpose[0], (int) objectpose[1], (int) objectpose[2], (int) objectpose[3], (int) graspVal);
                         fprintf(training_file_2, " %d %d %d %d %d\n", (int) (objectpose[0]/2.0), (int) (objectpose[1]/2.0), (int) (objectpose[2]/2.0), (int) (objectpose[3]/2.0), (int) graspVal);
                     
                     }
