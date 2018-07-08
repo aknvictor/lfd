@@ -77,18 +77,27 @@ int main()
     float width = cap.get(CV_CAP_PROP_FRAME_WIDTH);
     float height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
 
-    cap >> frame;
-    
-    float *ff = getObjectPose(frame, segmentation_values, width, height);
-    float *objectpose = new float[4]; //delta (x, y, z, theta)
+    bool captured = false;
+    while(!captured)
+    {
+        cap >> frame;
+        
+        float *ff = getObjectPose(frame, segmentation_values, width, height);
+        float *objectpose = new float[4]; //delta (x, y, z, theta)
 
-    imagePoint.x = ff[0];
-    imagePoint.y = ff[1];
+        imagePoint.x = ff[0];
+        imagePoint.y = ff[1];
 
-    inversePerspectiveTransformation(imagePoint, camera_model, 0, &worldPoint);
+        if(ff[0] != -1.0) 
+        {
+            captured = true;
+            inversePerspectiveTransformation(imagePoint, camera_model, 0, &worldPoint);
+            gotoPose(worldPoint.x, worldPoint.y, worldPoint.z, pitch, roll); 
+        }
 
-    gotoPose(worldPoint.x, worldPoint.y, worldPoint.z, pitch, roll);
-    
+    }
+
+
 
 #if DEMO
 
