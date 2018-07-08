@@ -97,9 +97,9 @@ int main()
 
     }
 
-    return 0;
+    sleep(20);
 
-
+    goHome();
 
 #if DEMO
 
