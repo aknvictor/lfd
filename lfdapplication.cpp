@@ -4,7 +4,7 @@
 #include "servoController/controllerInterface.h"
 #include "cameraInvPerspectiveMonocular/cameraInvPerspectiveMonocular.h"
 
-
+#define GRIPPER_OPEN 25
 struct timespec counter, start, pressKey, releaseKey;
 
 int main()
@@ -23,7 +23,7 @@ int main()
     float z = 200;
     float pitch = -180;
     float roll = -90;
-    int graspVal = 0; //open
+    int graspVal = GRIPPER_OPEN;
 
     int last_action_x, last_action_y, last_action_z, last_action_theta, last_action_grasp;
     int last_obs_x, last_obs_y, last_obs_z, last_obs_theta, last_obs_grasp;
@@ -74,13 +74,12 @@ int main()
         prompt_and_exit(1);
     }
 
-    
-    float width = cap.get(CV_CAP_PROP_FRAME_WIDTH) ; 
-    float height = cap.get(CV_CAP_PROP_FRAME_HEIGHT) ;
+    float width = cap.get(CV_CAP_PROP_FRAME_WIDTH);
+    float height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
 
 #if DEMO
 
-    printf("\n %s \n", "Commence demonstration"); 
+    printf("\n %s \n", "Commence demonstration");
 
     FILE *training_file = fopen("applicationData/trainingdata.txt", "a");
 
@@ -128,7 +127,7 @@ int main()
 
                 int status = 0;
                 if (index == 0)
-                    status = gotoPose(x + (poseDelta[0] < 0.0 ? -3 : 3) , y, z, pitch, roll);
+                    status = gotoPose(x + (poseDelta[0] < 0.0 ? -3 : 3), y, z, pitch, roll);
 
                 else if (index == 1)
                     status = gotoPose(x, y + (poseDelta[1] < 0.0 ? -3 : 3), z, pitch, roll);
@@ -153,52 +152,47 @@ int main()
                         z += (poseDelta[2] < 0.0 ? -3 : 3);
                     else if (index == 4)
                         roll += (poseDelta[4] < 0.0 ? -3 : 3);
-                        // roll;
-                        
+                    // roll;
+
                     // Observation: objectpose - endeffector pose
 
                     cap >> frame;
 
                     //camera 1 (down ward facing)
-                    float *ff = getObjectPose(frame, segmentation_values, width, height );
+                    float *ff = getObjectPose(frame, segmentation_values, width, height);
                     float *objectpose = new float[4]; //delta (x, y, z, theta)
-                    
-                   imagePoint.x = ff[0];
-                   imagePoint.y = ff[1];
 
-                   inversePerspectiveTransformation(imagePoint, camera_model, 0, &worldPoint);
-                    
+                    imagePoint.x = ff[0];
+                    imagePoint.y = ff[1];
+
+                    inversePerspectiveTransformation(imagePoint, camera_model, 0, &worldPoint);
+
                     objectpose[0] = x - worldPoint.x;
-                    objectpose[1] = y -  worldPoint.y;
+                    objectpose[1] = y - worldPoint.y;
                     objectpose[2] = z - worldPoint.z;
-
-                    printf("\n Angle: %f \n", ff[2]);
                     objectpose[3] = roll - ff[2];
-
 
                     if (objectpose[0] != -1.0 && !(poseDelta[0] == 0.0 && poseDelta[1] == 0.0 && poseDelta[2] == 0.0 && poseDelta[3] == 0.0 && poseDelta[4] == 0.0))
                     {
-                        
+
                         last_action_x = index == 0 ? poseDelta[0] < 0.0 ? -3 : 3 : 0;
                         last_action_y = index == 1 ? poseDelta[1] < 0.0 ? -3 : 3 : 0;
                         last_action_z = index == 2 ? poseDelta[2] < 0.0 ? -3 : 3 : 0;
                         last_action_theta = index == 4 ? poseDelta[4] < 0.0 ? -3 : 3 : 0;
                         last_action_grasp = graspVal;
 
-                        printf( " %d %d %d %d %d\n",  last_action_x, last_action_y, last_action_z, last_action_theta, last_action_grasp);
-                   
+                        fprintf(training_file, " %d %d %d %d %d\n", last_action_x, last_action_y, last_action_z, last_action_theta, last_action_grasp);
+
                         //endeffector and object differential pose
 
-                        last_obs_x = (int) (objectpose[0] += 0.5);
-                        last_obs_y = (int) (objectpose[1] += 0.5);
-                        last_obs_z = (int) (objectpose[2] += 0.5);
-                        last_obs_theta = (int) (objectpose[3] += 0.5);
+                        last_obs_x = (int)(objectpose[0] += 0.5);
+                        last_obs_y = (int)(objectpose[1] += 0.5);
+                        last_obs_z = (int)(objectpose[2] += 0.5);
+                        last_obs_theta = (int)(objectpose[3] += 0.5);
                         last_obs_grasp = graspVal;
 
-                        printf(" %d %d %d %d %d\n", last_obs_x, last_obs_y, last_obs_z, last_obs_theta, last_obs_grasp);
-                 
+                        fprintf(training_file, " %d %d %d %d %d\n", last_obs_x, last_obs_y, last_obs_z, last_obs_theta, last_obs_grasp);
                     }
-
                 }
             }
         }
@@ -208,16 +202,13 @@ int main()
 
             if (sev.button.bnum == 0 && sev.button.press)
             {
-                graspVal = abs(graspVal - 30);
-
-                printf("%d\n", graspVal);
+                graspVal = abs(graspVal - GRIPPER_OPEN);
                 grasp(graspVal);
 
-                last_action_grasp = graspVal;                
-                printf( " %d %d %d %d %d\n",  last_action_x, last_action_y, last_action_z, last_action_theta, last_action_grasp);
+                last_action_grasp = graspVal;
+                fprintf(training_file, " %d %d %d %d %d\n", last_action_x, last_action_y, last_action_z, last_action_theta, last_action_grasp);
                 last_obs_grasp = graspVal;
-                printf(" %d %d %d %d %d\n", last_obs_x, last_obs_y, last_obs_z, last_obs_theta, last_obs_grasp);
-                
+                fprintf(training_file, " %d %d %d %d %d\n", last_obs_x, last_obs_y, last_obs_z, last_obs_theta, last_obs_grasp);
             }
 
             else if (sev.button.bnum == 1)
@@ -234,8 +225,8 @@ int main()
                     // fprintf(training_file, "%s\n", "end");
 
                     printf("\n %s \n", "End of Demonstration");
-                    
-                    gotoPose(0, 120, 200 , pitch, -90);
+
+                    gotoPose(0, 120, 200, pitch, -90);
 
                     graspVal = 0;
                     grasp(graspVal);
@@ -251,15 +242,14 @@ int main()
                         fprintf(training_file, "%s\n", "finish");
                         printf("\n %s \n", "End of current Demonstration");
 
-                        gotoPose(0, 120, 200 , pitch, -90);
+                        gotoPose(0, 120, 200, pitch, -90);
                         graspVal = 0;
                         grasp(graspVal);
 
-                         x = 0;
-                         y = 120;
-                         z = 200;
-                         roll = -90;
-                                            
+                        x = 0;
+                        y = 120;
+                        z = 200;
+                        roll = -90;
                     }
                 }
             }
@@ -326,7 +316,6 @@ int main()
 
     spnav_close();
 
-    // Event_t *events_ = new Event_t();
     EventUnion e;
 
     print_hypotheses(hypotheses_file);
@@ -342,28 +331,29 @@ int main()
             // Observation: objectpose - endeffector pose
 
             cap >> frame;
-            float *ff = getObjectPose(frame, segmentation_values, width, height );
+            float *ff = getObjectPose(frame, segmentation_values, width, height);
 
             float *objectpose = new float[4]; //delta (x, y, z, theta)
             imagePoint.x = ff[0];
             imagePoint.y = ff[1];
 
             inversePerspectiveTransformation(imagePoint, camera_model, 0, &worldPoint);
-            
+
             objectpose[0] = x - worldPoint.x;
-            objectpose[1] = y -  worldPoint.y;
+            objectpose[1] = y - worldPoint.y;
             objectpose[2] = z - worldPoint.z;
             objectpose[3] = roll - ff[2];
 
             e.observation.diffX = objectpose[0] + 0.5;
             e.observation.diffY = objectpose[1] + 0.5;
             e.observation.diffZ = objectpose[2] + 0.5;
-            e.observation.diffangle = 0.0; //objectpose[3] + 0.5;
+            e.observation.diffangle = objectpose[3] + 0.5;
+            // e.observation.diffangle = 0.0;
 
             e.observation.grasp = graspVal;
 
             fprintf(execution_file, "Observation: %f %f %f %f %d\n", objectpose[0], objectpose[1], objectpose[2], objectpose[3], graspVal);
-            fprintf(execution_file, "Observation: %d %d %d %d %d\n", (int) e.observation.diffX, (int) e.observation.diffY, (int) e.observation.diffZ, (int) e.observation.diffangle, (int) e.observation.grasp);
+            fprintf(execution_file, "Observation: %d %d %d %d %d\n", (int)e.observation.diffX, (int)e.observation.diffY, (int)e.observation.diffZ, (int)e.observation.diffangle, (int)e.observation.grasp);
 
             Event_t *events_ = new Event_t();
             push(events_, e, 2);
@@ -371,34 +361,31 @@ int main()
             Event_t *pred = predict(events_);
             push(events_, pred->event, pred->eventtype);
 
-            // fprintf(execution_file, "Action: %f %f %f %f %f %d\n", (float) pred->event.action.deltaX, (float) pred->event.action.deltaY, (float) pred->event.action.deltaZ, pitch, (float) pred->event.action.deltaangle, pred->event.action.grasp);
-            
-            fprintf(execution_file, "Action: %d %d %d %d %d %d evtype: %d \n",  (int) pred->event.action.deltaX,  (int) pred->event.action.deltaY,  (int) pred->event.action.deltaZ, (int) pitch, (int) pred->event.action.deltaangle, (int) pred->event.action.grasp, (int) pred->eventtype);
-            
-            if(pred->eventtype != 0)
+            fprintf(execution_file, "Action: %d %d %d %d %d %d evtype: %d \n", (int)pred->event.action.deltaX, (int)pred->event.action.deltaY, (int)pred->event.action.deltaZ, (int)pitch, (int)pred->event.action.deltaangle, (int)pred->event.action.grasp, (int)pred->eventtype);
+
+            if (pred->eventtype != 0)
             {
-                // int status = gotoPose(x + (float) pred->event.action.deltaX, y + (float) pred->event.action.deltaY, z + (float) pred->event.action.deltaZ, pitch, roll + (float) pred->event.action.deltaangle);
-                int status = gotoPose(x + (float) pred->event.action.deltaX, y + (float) pred->event.action.deltaY, z + (float) pred->event.action.deltaZ, pitch, roll );
-                
-                
-                if(status){
+                int status = gotoPose(x + (float)pred->event.action.deltaX, y + (float)pred->event.action.deltaY, z + (float)pred->event.action.deltaZ, pitch, roll + (float)pred->event.action.deltaangle);
+                // int status = gotoPose(x + (float) pred->event.action.deltaX, y + (float) pred->event.action.deltaY, z + (float) pred->event.action.deltaZ, pitch, roll );
+
+                if (status)
+                {
 
                     grasp(pred->event.action.grasp);
                     graspVal = pred->event.action.grasp;
 
-                    x += (float) pred->event.action.deltaX;
-                    y += (float) pred->event.action.deltaY;
-                    z += (float) pred->event.action.deltaZ; 
-                    // roll += 0.0; 
-                    roll += (float) pred->event.action.deltaangle;
+                    x += (float)pred->event.action.deltaX;
+                    y += (float)pred->event.action.deltaY;
+                    z += (float)pred->event.action.deltaZ;
+                    // roll += 0.0;
+                    roll += (float)pred->event.action.deltaangle;
                 }
             }
-           
         }
     }
 
     free_hyp();
-    fclose(execution_file);    
+    fclose(execution_file);
 
 #endif
 
@@ -485,7 +472,7 @@ int main()
         exit(1);
     }
 
-    grasp(30);
+    grasp(GRIPPER_OPEN);
 
     for (int x = min_x; x < max_x; x += 20)
     {
@@ -496,7 +483,7 @@ int main()
             sleep(2);
 
             cap >> frame;
-            float *ff = getObjectPose(frame, segmentation_values, width, height );
+            float *ff = getObjectPose(frame, segmentation_values, width, height);
 
             printf("\n %f %f %f \n", ff[0], ff[1], ff[2]);
 
