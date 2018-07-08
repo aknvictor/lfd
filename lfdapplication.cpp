@@ -92,7 +92,7 @@ int main()
         {
             captured = true;
             inversePerspectiveTransformation(imagePoint, camera_model, 0, &worldPoint);
-            gotoPose(worldPoint.x, worldPoint.y, worldPoint.z + 110, pitch, ff[2]); 
+            gotoPose(worldPoint.x, worldPoint.y, worldPoint.z + 110, pitch, ff[2] + 90); 
         }
 
     }
