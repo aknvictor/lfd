@@ -185,7 +185,7 @@ int main()
                         last_action_theta = index == 0 ? poseDelta[4] < 0.0 ? -3 : 3 : 0;
                         last_action_grasp = graspVal;
 
-                        printf( " %d %d %d %d %d\n",  last_action_x, last_action_y, last_action_z, last_action_theta, last_action_x, last_action_grasp);
+                        printf( " %d %d %d %d %d\n",  last_action_x, last_action_y, last_action_z, last_action_theta, last_action_grasp);
                    
                         //endeffector and object differential pose
 
@@ -214,7 +214,7 @@ int main()
                 grasp(graspVal);
 
                 last_action_grasp = graspVal;                
-                printf( " %d %d %d %d %d\n",  last_action_x, last_action_y, last_action_z, last_action_theta, last_action_x, last_action_grasp);
+                printf( " %d %d %d %d %d\n",  last_action_x, last_action_y, last_action_z, last_action_theta, last_action_grasp);
                 last_obs_grasp = graspVal;
                 printf(" %d %d %d %d %d\n", last_obs_x, last_obs_y, last_obs_z, last_obs_theta, last_obs_grasp);
                 
