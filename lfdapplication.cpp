@@ -76,6 +76,7 @@ int main()
 
     float width = cap.get(CV_CAP_PROP_FRAME_WIDTH);
     float height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+    int delta = 3;
 
     bool captured = false;
     while(!captured)
@@ -152,17 +153,17 @@ int main()
 
                 int status = 0;
                 if (index == 0)
-                    status = gotoPose(x + (poseDelta[0] < 0.0 ? -3 : 3), y, z, pitch, roll);
+                    status = gotoPose(x + (poseDelta[0] < 0.0 ? (delta * -1): delta), y, z, pitch, roll);
 
                 else if (index == 1)
-                    status = gotoPose(x, y + (poseDelta[1] < 0.0 ? -3 : 3), z, pitch, roll);
+                    status = gotoPose(x, y + (poseDelta[1] < 0.0 ? (delta * -1): delta), z, pitch, roll);
 
                 else if (index == 2)
-                    status = gotoPose(x, y, z + (poseDelta[2] < 0.0 ? -3 : 3), pitch, roll);
+                    status = gotoPose(x, y, z + (poseDelta[2] < 0.0 ? (delta * -1): delta), pitch, roll);
 
                 else if (index == 4)
                     // status = gotoPose(x, y, z, pitch, roll);
-                    status = gotoPose(x, y, z, pitch, roll + (poseDelta[4] < 0.0 ? -3 : 3));
+                    status = gotoPose(x, y, z, pitch, roll + (poseDelta[4] < 0.0 ? (delta * -1): delta));
 
                 //printf("\n status: %d \n", status );
                 if (status)
@@ -170,13 +171,13 @@ int main()
                     //Action: posedeltas
 
                     if (index == 0)
-                        x += (poseDelta[0] < 0.0 ? -3 : 3);
+                        x += (poseDelta[0] < 0.0 ? (delta * -1): delta);
                     else if (index == 1)
-                        y += (poseDelta[1] < 0.0 ? -3 : 3);
+                        y += (poseDelta[1] < 0.0 ? (delta * -1): delta);
                     else if (index == 2)
-                        z += (poseDelta[2] < 0.0 ? -3 : 3);
+                        z += (poseDelta[2] < 0.0 ? (delta * -1): delta);
                     else if (index == 4)
-                        roll += (poseDelta[4] < 0.0 ? -3 : 3);
+                        roll += (poseDelta[4] < 0.0 ? (delta * -1): delta);
                     // roll;
 
                     // Observation: objectpose - endeffector pose
@@ -199,10 +200,10 @@ int main()
                     if (objectpose[0] != -1.0 && !(poseDelta[0] == 0.0 && poseDelta[1] == 0.0 && poseDelta[2] == 0.0 && poseDelta[3] == 0.0 && poseDelta[4] == 0.0))
                     {
 
-                        last_action_x = index == 0 ? poseDelta[0] < 0.0 ? -3 : 3 : 0;
-                        last_action_y = index == 1 ? poseDelta[1] < 0.0 ? -3 : 3 : 0;
-                        last_action_z = index == 2 ? poseDelta[2] < 0.0 ? -3 : 3 : 0;
-                        last_action_theta = index == 4 ? poseDelta[4] < 0.0 ? -3 : 3 : 0;
+                        last_action_x = index == 0 ? poseDelta[0] < 0.0 ? (delta * -1): delta : 0;
+                        last_action_y = index == 1 ? poseDelta[1] < 0.0 ? (delta * -1): delta : 0;
+                        last_action_z = index == 2 ? poseDelta[2] < 0.0 ? (delta * -1): delta : 0;
+                        last_action_theta = index == 4 ? poseDelta[4] < 0.0 ? (delta * -1): delta : 0;
                         last_action_grasp = graspVal;
 
                         fprintf(training_file, " %d %d %d %d %d\n", last_action_x, last_action_y, last_action_z, last_action_theta, last_action_grasp);
@@ -367,6 +368,8 @@ int main()
             objectpose[1] = y - worldPoint.y;
             objectpose[2] = z - worldPoint.z;
             objectpose[3] = roll - ff[2];
+
+            if(objectpose[0] > 50.0 || objectpose[1] > 50.0) delta = 6;
 
             e.observation.diffX = objectpose[0] + 0.5;
             e.observation.diffY = objectpose[1] + 0.5;
