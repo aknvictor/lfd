@@ -92,12 +92,12 @@ int main()
         {
             captured = true;
             inversePerspectiveTransformation(imagePoint, camera_model, 0, &worldPoint);
-            gotoPose(worldPoint.x, worldPoint.y, worldPoint.z + 110, pitch, ff[2] - 90); 
+            // gotoPose(worldPoint.x, worldPoint.y, worldPoint.z + 110, pitch, ff[2] - 90); 
         }
 
     }
 
-    sleep(20);
+    // sleep(20);
 
     goHome();
 
@@ -128,7 +128,7 @@ int main()
     {
         clock_gettime(CLOCK_MONOTONIC_RAW, &counter);
 
-        if (timediff(counter, start) > 500) //sample every 200 milliseconds or 5Hz
+        if (timediff(counter, start) > 200) //sample every 200 milliseconds or 5Hz
         {
             clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
