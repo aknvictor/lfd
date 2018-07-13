@@ -197,7 +197,8 @@ int main()
                     objectpose[3] = roll - ff[2];
 
                     printf("\n diff: %f %f %f", x, y, z);
-
+                    if(objectpose[0] > 50.0 || objectpose[1] > 50.0) delta = 6;
+                    
                     if (objectpose[0] != -1.0 && !(poseDelta[0] == 0.0 && poseDelta[1] == 0.0 && poseDelta[2] == 0.0 && poseDelta[3] == 0.0 && poseDelta[4] == 0.0))
                     {
 
@@ -369,8 +370,6 @@ int main()
             objectpose[1] = y - worldPoint.y;
             objectpose[2] = z - worldPoint.z;
             objectpose[3] = roll - ff[2];
-
-            if(objectpose[0] > 50.0 || objectpose[1] > 50.0) delta = 6;
 
             e.observation.diffX = objectpose[0] + 0.5;
             e.observation.diffY = objectpose[1] + 0.5;
