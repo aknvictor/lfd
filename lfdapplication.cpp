@@ -99,8 +99,7 @@ int main()
     }
 
     // sleep(20);
-
-    goHome();
+    // goHome();
 
 #if DEMO
 
@@ -136,7 +135,7 @@ int main()
             if (sev.type == SPNAV_EVENT_MOTION)
             {
                 //delta (x, y, z, theta)
-                printf("%d %d %d %d %d %d", sev.motion.x, sev.motion.y, sev.motion.z, sev.motion.rx, sev.motion.ry, sev.motion.rz);
+                // printf("%d %d %d %d %d %d", sev.motion.x, sev.motion.y, sev.motion.z, sev.motion.rx, sev.motion.ry, sev.motion.rz);
                 float *poseDelta = scale_and_map(sev.motion.x, sev.motion.y, sev.motion.z, sev.motion.rx, sev.motion.ry, sev.motion.rz);
 
                 //take the max delta only and act on only that axis
@@ -196,6 +195,8 @@ int main()
                     objectpose[1] = y - worldPoint.y;
                     objectpose[2] = z - worldPoint.z;
                     objectpose[3] = roll - ff[2];
+
+                    printf("\n diff: %f %f %f", x, y, z);
 
                     if (objectpose[0] != -1.0 && !(poseDelta[0] == 0.0 && poseDelta[1] == 0.0 && poseDelta[2] == 0.0 && poseDelta[3] == 0.0 && poseDelta[4] == 0.0))
                     {
