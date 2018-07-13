@@ -135,6 +135,7 @@ int main()
             if (sev.type == SPNAV_EVENT_MOTION)
             {
                 //delta (x, y, z, theta)
+                printf("%d %d %d %d %d %d", sev.motion.x, sev.motion.y, sev.motion.z, sev.motion.rx, sev.motion.ry, sev.motion.rz);
                 float *poseDelta = scale_and_map(sev.motion.x, sev.motion.y, sev.motion.z, sev.motion.rx, sev.motion.ry, sev.motion.rz);
 
                 //take the max delta only and act on only that axis
