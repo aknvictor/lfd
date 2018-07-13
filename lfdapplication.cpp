@@ -128,7 +128,7 @@ int main()
     {
         clock_gettime(CLOCK_MONOTONIC_RAW, &counter);
 
-        if (timediff(counter, start) > 200) //sample every 200 milliseconds or 5Hz
+        if (timediff(counter, start) > 500) //sample every 200 milliseconds or 5Hz
         {
             clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
