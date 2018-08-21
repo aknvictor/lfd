@@ -6,4 +6,4 @@ make clean
 # sudo ./app
 
 make
-sudo ./main
+sudo ./application
