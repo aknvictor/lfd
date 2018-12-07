@@ -18,4 +18,19 @@ append library location in /usr/local/lib/libspnav.so.0 to LD_LIBRARY_PATH
 export the variable
 
 
-cmake BUILD_TESTS=OFF -D BUILD_PERF_TESTS=OFF -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D OPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib/modules /opt/opencv/
+cmake -D CMAKE_BUILD_TYPE=RELEASE \
+	-D CMAKE_INSTALL_PREFIX=/usr/local \
+	-D BUILD_WITH_DEBUG_INFO=OFF \
+	-D BUILD_DOCS=OFF \
+	-D BUILD_EXAMPLES=OFF \
+	-D BUILD_TESTS=OFF \
+	-D BUILD_opencv_ts=OFF \
+	-D BUILD_PERF_TESTS=OFF \
+	-D INSTALL_C_EXAMPLES=ON \
+	-D INSTALL_PYTHON_EXAMPLES=ON \
+	-D OPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib/modules \
+	-D ENABLE_NEON=ON \
+	-D WITH_LIBV4L=ON \
+        /opt/opencv/
+
+http://pklab.net/?id=392&lang=EN
