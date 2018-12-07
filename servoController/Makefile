@@ -1,6 +1,6 @@
 CC = g++
 CFLAGS = -pedantic -Wall -g -std=c++0x -I../.. -I/usr/local/include 
-LDFLAGS = -L../.. -L/usr/local/lib -lm controllerInterface.cpp
+LDFLAGS = -L../.. -L/usr/local/lib -lspnav -lX11 -lm controllerInterface.cpp
 
 OPENCV = `pkg-config opencv --cflags --libs`
 LIBS = $(OPENCV)
