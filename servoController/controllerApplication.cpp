@@ -34,7 +34,7 @@ int main(int argc, char **argv)
         if (sev.type == SPNAV_EVENT_MOTION)
         {
             float *poseDelta = scale_and_map(sev.motion.x, sev.motion.y, sev.motion.z, sev.motion.rx, sev.motion.ry, sev.motion.rz);
-            gotoPose(poseDelta[0] + x, poseDelta[1] + y, poseDelta[2] + z, poseDelta[3] + pitch, poseDelta[4] + roll)
+            gotoPose(poseDelta[0] + x, poseDelta[1] + y, poseDelta[2] + z, poseDelta[3] + pitch, poseDelta[4] + roll);
         }
         else if (sev.type == SPNAV_EVENT_BUTTON)
         {
