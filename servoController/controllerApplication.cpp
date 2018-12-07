@@ -14,6 +14,7 @@ int main(int argc, char ** argv)
     float roll = 0;
     int graspVal = 60;
 
+    readRobotConfigurationData("../applicationControl/robotConfig.txt");
 
     goHome();
 
