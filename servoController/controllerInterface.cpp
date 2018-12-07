@@ -950,7 +950,7 @@ float *scale_and_map(int m_x, int m_y, int m_z, int m_rx, int m_ry, int m_rz)
     poseDelta[3] = 0.0;
     poseDelta[4] = 0.0;
 
-    float f = (1.0 / 350.0);
+    float f = (10.0 / 350.0);
 
     float x = f * m_x;
     float y = f * m_z;
