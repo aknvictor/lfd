@@ -936,3 +936,36 @@ void readRobotConfigurationData(char filename[]) {
    }
 }
 
+
+// Scaling the values from the space navigator 3d mouse
+
+//scale -350:350 into respective scales
+float *scale_and_map(int m_x, int m_y, int m_z, int m_rx, int m_ry, int m_rz)
+{
+    float *poseDelta = (float *)malloc(sizeof(float) * 5); //should be 4. - x, y, z theta
+
+    poseDelta[0] = 0.0;
+    poseDelta[1] = 0.0;
+    poseDelta[2] = 0.0;
+    poseDelta[3] = 0.0;
+    poseDelta[4] = 0.0;
+
+    float f = (1.0 / 350.0);
+
+    float x = f * m_x;
+    float y = f * m_z;
+    float z = f * m_y;
+    float p = f * m_rx;
+    float r = f * m_rz; // in the endeffector FOR, the roll is rotation about z when facing direction of wrist. when facing downward its rotation about x in the robot FOR, the roll is a rotation about y when in the wrist direction and about z when facing down
+
+    // printf("\n \nMouse: \n %d %d %d %d %d %d \n", m_x, m_y, m_z, m_rx, m_ry, m_rz);
+    // printf("Pose delta: \n %f %f %f %f %f \n", x, y, z, p, r);
+
+    poseDelta[0] = x;
+    poseDelta[1] = y;
+    poseDelta[2] = z;
+    poseDelta[3] = p;
+    poseDelta[4] = r;
+
+    return poseDelta;
+}
