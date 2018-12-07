@@ -969,3 +969,12 @@ float *scale_and_map(int m_x, int m_y, int m_z, int m_rx, int m_ry, int m_rz)
 
     return poseDelta;
 }
+
+void sig(int s)
+{
+    #if DEMO
+    printf("%s", "exiting");
+    spnav_close();
+    #endif
+    exit(0);
+}
