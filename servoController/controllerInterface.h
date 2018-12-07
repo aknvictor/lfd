@@ -146,3 +146,5 @@ void sig(int s);
 void readRobotConfigurationData(char filename[]);
 
 float *scale_and_map(int m_x, int m_y, int m_z, int m_rx, int m_ry, int m_rz);
+
+int timediff(struct timespec end, struct timespec start);
