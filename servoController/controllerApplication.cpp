@@ -1,4 +1,5 @@
 #include "controllerInterface.h"
+struct timespec counter, start;
 
 int main(int argc, char **argv)
 {
@@ -29,17 +30,31 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+
     while (spnav_wait_event(&sev))
     {
-        if (sev.type == SPNAV_EVENT_MOTION)
+        clock_gettime(CLOCK_MONOTONIC_RAW, &counter);
+
+        if (timediff(counter, start) > 500) //sample every 200 milliseconds or 5Hz
         {
-            float *poseDelta = scale_and_map(sev.motion.x, sev.motion.y, sev.motion.z, sev.motion.rx, sev.motion.ry, sev.motion.rz);
-            gotoPose(poseDelta[0] + x, poseDelta[1] + y, poseDelta[2] + z, poseDelta[3] + pitch, poseDelta[4] + roll);
-        }
-        else if (sev.type == SPNAV_EVENT_BUTTON)
-        {
-            return 0;
-            spnav_close();
+            clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+
+            if (sev.type == SPNAV_EVENT_MOTION)
+            {
+                float *poseDelta = scale_and_map(sev.motion.x, sev.motion.y, sev.motion.z, sev.motion.rx, sev.motion.ry, sev.motion.rz);
+                x = poseDelta[0] + x;
+                y = poseDelta[1] + y;
+                z = poseDelta[2] + z;
+                pitch = poseDelta[3] + pitch;
+                roll = poseDelta[4] + roll;
+                gotoPose(x, y, z, pitch, roll);
+            }
+            else if (sev.type == SPNAV_EVENT_BUTTON)
+            {
+                return 0;
+                spnav_close();
+            }
         }
     }
 
