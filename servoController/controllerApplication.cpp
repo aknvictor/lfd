@@ -7,19 +7,45 @@ int main(int argc, char ** argv)
     char BAUD[7] = "9600";          // Baud Rate
     int speed = 300;                // Servo speed
 
-    float x = 100;
-    float y = 200;
-    float z = 150;
-    float pitch = -90;
-    float roll = 0;
+    int x = 0;
+    int y = 200;
+    int z = 120;
+    int pitch = -180;
+    int roll = -90;
     int graspVal = 60;
 
     readRobotConfigurationData("../applicationControl/robotConfig.txt");
 
     goHome();
 
-    printf("%d", gotoPose(0, 200, 120 , -180, -90));
+    printf("%d", gotoPose(x, y, z , pitch, roll));
     
+
+    spnav_event sev;
+    signal(SIGINT, sig);
+
+    if (spnav_open() == -1)
+    {
+        fprintf(stderr, "failed to connect to the space navigator daemon\n");
+        return 1;
+    }
+
+
+    while (spnav_wait_event(&sev))
+    {
+        if (sev.type == SPNAV_EVENT_MOTION)
+            {
+                float *poseDelta = scale_and_map(sev.motion.x, sev.motion.y, sev.motion.z, sev.motion.rx, sev.motion.ry, sev.motion.rz);
+                gotoPose(poseDelta[0] + x, poseDelta[1] + y, poseDelta[2] + z , poseDelta[3] + pitch, poseDelta[4] + roll)
+            }
+        else if (sev.type == SPNAV_EVENT_BUTTON){
+            return 0;
+            spnav_close();
+        } 
+
+    }
+    
+    spnav_close();
     return 0;
 
 }
