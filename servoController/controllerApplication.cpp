@@ -13,7 +13,7 @@ int main(int argc, char **argv)
     int z = 120;
     int pitch = -180;
     int roll = -90;
-    int graspVal = 60;
+    int graspVal = 30;
 
     readRobotConfigurationData("../applicationControl/robotConfig.txt");
 
@@ -50,10 +50,15 @@ int main(int argc, char **argv)
                 roll = poseDelta[4] + roll;
                 gotoPose(x, y, z, pitch, roll);
             }
-            else if (sev.type == SPNAV_EVENT_BUTTON)
+            else if (sev.type == SPNAV_EVENT_BUTTON and sev.button.bnum == 0 and sev.press)
             {
                 return 0;
                 spnav_close();
+            }
+            else if (sev.type == SPNAV_EVENT_BUTTON and sev.button.bnum == 1 and sev.press)
+            {
+                grasp(graspVal);
+                graspVal = abs(graspVal - 30)
             }
         }
     }
