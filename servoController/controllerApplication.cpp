@@ -50,12 +50,12 @@ int main(int argc, char **argv)
                 roll = poseDelta[4] + roll;
                 gotoPose(x, y, z, pitch, roll);
             }
-            else if (sev.type == SPNAV_EVENT_BUTTON and sev.button.bnum == 0 and sev.press)
+            else if (sev.type == SPNAV_EVENT_BUTTON and sev.button.bnum == 0 and sev.button.press)
             {
                 return 0;
                 spnav_close();
             }
-            else if (sev.type == SPNAV_EVENT_BUTTON and sev.button.bnum == 1 and sev.press)
+            else if (sev.type == SPNAV_EVENT_BUTTON and sev.button.bnum == 1 and sev.button.press)
             {
                 grasp(graspVal);
                 graspVal = abs(graspVal - 30)
