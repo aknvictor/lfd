@@ -58,7 +58,7 @@ int main(int argc, char **argv)
             else if (sev.type == SPNAV_EVENT_BUTTON and sev.button.bnum == 1 and sev.button.press)
             {
                 grasp(graspVal);
-                graspVal = abs(graspVal - 30)
+                graspVal = abs(graspVal - 30);
             }
         }
     }
