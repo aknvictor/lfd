@@ -555,7 +555,7 @@ void executeCommand(int channel, int pos, int speed) {
 
 void sendToSerialPort(char *command)
 {
-    bool debug = false;  
+    bool debug = true;  
     char execcommand[COMMAND_SIZE];
 
     if (debug && false) printf("execute(): %s \n", command);
