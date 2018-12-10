@@ -781,7 +781,7 @@ void grasp(int d) // d is distance between finger tips:  0 <= d <= 30 mm
 
    if (debug) {
       printf("grasp: %d\n",d);
-     // printf("grasp: d %d  PW %d\n", d, pw);
+      printf("grasp: d %d  PW %d\n", d, pw);
    }
    executeCommand(robotConfigurationData.channel[5], pw, robotConfigurationData.speed * 2);   
 }
