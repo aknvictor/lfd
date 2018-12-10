@@ -777,11 +777,11 @@ void grasp(int d) // d is distance between finger tips:  0 <= d <= 30 mm
    bool debug = true;
 
    int pw;
-   pw = robotConfigurationData.home[5] + (int) (( (float) 30-d) * robotConfigurationData.degree[5]);
+   float offset = ((float)(30 - d)) * robotConfigurationData.degree[5];
+   pw = robotConfigurationData.home[5] + (int) offset;
 
    if (debug) {
-      printf("grasp: %d\n",d);
-      printf("grasp: d %d  PW %d\n", d, pw);
+      printf("grasp: d %d  PW %d degree %f\n", d, pw, robotConfigurationData.degree[5]);
    }
    executeCommand(robotConfigurationData.channel[5], pw, robotConfigurationData.speed * 2);   
 }
