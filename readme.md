@@ -2,7 +2,7 @@
 - install opencv branch 3.4 for both opencv and - opencv_contrib
 - pkg-config --modversion opencv to check opencv version
 - install spacenavd using apt-get
-- install libspnav for spnav.h
+- install libspnav for spnav.h (https://github.com/FreeSpacenav/libspnav)
 - append library location in /usr/local/lib/libspnav.so.0 to LD_LIBRARY_PATH
 - export the variable
 
